@@ -1,0 +1,202 @@
+<div class="min-h-screen flex flex-col bg-slate-900 text-slate-100">
+  <!-- Top Header Navigation Bar -->
+  <header class="sticky top-0 z-50 bg-slate-800/90 backdrop-blur-md border-b border-slate-700/80 px-4 py-3 flex items-center justify-between shadow-lg">
+    <div class="flex items-center space-x-3 cursor-pointer" (click)="closeActiveItem()">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-0.5 shadow-md hover:scale-105 transition-transform">
+        <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-bold text-teal-400 text-xl tracking-tighter">
+          m
+        </div>
+      </div>
+      <div>
+        <h1 class="text-xl font-black bg-gradient-to-r from-indigo-400 to-teal-300 bg-clip-text text-transparent tracking-wide">
+          Minimi
+        </h1>
+        <p class="text-[10px] text-slate-400 font-mono hidden sm:block">100 Games. 100 Tools. Zero Backend.</p>
+      </div>
+    </div>
+
+    <!-- Category Toggle Switch: GAMES vs TOOLS -->
+    <div class="flex bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 shadow-inner">
+      <button
+        (click)="selectCategory('games')"
+        [class.bg-indigo-600]="activeCategory() === 'games'"
+        [class.text-white]="activeCategory() === 'games'"
+        [class.text-slate-400]="activeCategory() !== 'games'"
+        class="px-5 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center space-x-2 hover:text-white">
+        <span>🎮</span>
+        <span>Games</span>
+      </button>
+      <button
+        (click)="selectCategory('tools')"
+        [class.bg-teal-600]="activeCategory() === 'tools'"
+        [class.text-white]="activeCategory() === 'tools'"
+        [class.text-slate-400]="activeCategory() !== 'tools'"
+        class="px-5 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center space-x-2 hover:text-white">
+        <span>🛠️</span>
+        <span>Tools</span>
+      </button>
+    </div>
+
+    <!-- Right Quick Search Input -->
+    <div class="relative hidden md:block w-64">
+      <input
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event || '')"
+        placeholder="Search {{ activeCategory() }}..."
+        class="w-full bg-slate-900 text-slate-200 text-sm px-3.5 py-1.5 pl-9 rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
+      >
+      <span class="absolute left-3 top-2 text-slate-500 text-xs">🔍</span>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 mb-16 md:mb-0">
+
+    <!-- Active Game / Tool Detail Fullscreen Modal Overlay -->
+    @if (selectedItem(); as item) {
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-6 shadow-2xl relative animate-fadeIn">
+        <!-- Close / Back Header Button -->
+        <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-700">
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl">{{ item.icon }}</span>
+            <div>
+              <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
+                <span>{{ item.name }}</span>
+                <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-700 text-indigo-300 font-normal">
+                  {{ item.subcategory }}
+                </span>
+              </h2>
+              <p class="text-sm text-slate-400">{{ item.description }}</p>
+            </div>
+          </div>
+          <button
+            (click)="closeActiveItem()"
+            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1">
+            <span>✕ Close</span>
+          </button>
+        </div>
+
+        <!-- Render Specific Game or Tool Component -->
+        <div class="min-h-[450px]">
+          @switch (item.id) {
+            @case ('pvz') { <app-pvz /> }
+            @case ('snake') { <app-snake /> }
+            @case ('2048') { <app-game2048 /> }
+            @case ('blockfall') { <app-blockfall /> }
+            @case ('maze-muncher') { <app-maze-muncher /> }
+            @case ('json-formatter') { <app-json-formatter /> }
+            @case ('base64') { <app-base64 /> }
+            @case ('qr-gen') { <app-qr-gen /> }
+            @case ('hash-gen') { <app-hash-gen /> }
+            @case ('pass-gen') { <app-pass-gen /> }
+            @default {
+              <div class="text-center py-20 text-slate-400">
+                <p class="text-lg">Module loading or placeholder for {{ item.name }}</p>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      <!-- Grid View of Catalog Items -->
+      <div class="space-y-6">
+        <!-- Subheader & Search Mobile -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+          <div>
+            <h2 class="text-xl font-bold text-white capitalize flex items-center space-x-2">
+              <span>{{ activeCategory() === 'games' ? '🎮 Mini Games Catalog' : '🛠️ Web Utilities Catalog' }}</span>
+              <span class="text-xs bg-indigo-500/20 text-indigo-400 font-mono px-2 py-0.5 rounded-full">
+                {{ filteredItems().length }} items
+              </span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Select an app below to launch immediately in browser.
+            </p>
+          </div>
+
+          <!-- Mobile Search Input -->
+          <div class="md:hidden relative w-full sm:w-64">
+            <input
+              type="text"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event || '')"
+              placeholder="Search..."
+              class="w-full bg-slate-900 text-slate-200 text-sm px-3.5 py-1.5 pl-9 rounded-lg border border-slate-700"
+            >
+            <span class="absolute left-3 top-2 text-slate-500 text-xs">🔍</span>
+          </div>
+        </div>
+
+        <!-- Catalog Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          @for (item of filteredItems(); track item.id) {
+            <div
+              (click)="openItem(item)"
+              class="bg-slate-800 hover:bg-slate-750 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl group relative flex flex-col justify-between">
+
+              <div>
+                <div class="flex items-start justify-between mb-3">
+                  <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700/60 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                    {{ item.icon }}
+                  </div>
+                  <button
+                    (click)="toggleFavorite(item.id, $event)"
+                    class="text-lg text-slate-600 hover:text-yellow-400 transition-colors p-1"
+                    [title]="isFav(item.id) ? 'Remove from favorites' : 'Add to favorites'">
+                    {{ isFav(item.id) ? '⭐' : '☆' }}
+                  </button>
+                </div>
+
+                <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors flex items-center justify-between">
+                  <span>{{ item.name }}</span>
+                  @if (item.isPopular) {
+                    <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded font-bold">HOT</span>
+                  }
+                </h3>
+                <p class="text-xs text-slate-400 mt-1 line-clamp-2">
+                  {{ item.description }}
+                </p>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+                <span class="text-[11px] text-slate-500 font-medium">
+                  {{ item.subcategory }}
+                </span>
+                <span class="text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform flex items-center space-x-1">
+                  <span>Launch</span>
+                  <span>→</span>
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- Mobile Bottom Quick Bar -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 px-6 py-2 flex items-center justify-around z-40">
+    <button
+      (click)="selectCategory('games')"
+      [class.text-indigo-400]="activeCategory() === 'games'"
+      [class.text-slate-400]="activeCategory() !== 'games'"
+      class="flex flex-col items-center text-xs font-medium">
+      <span class="text-lg">🎮</span>
+      <span>Games</span>
+    </button>
+    <button
+      (click)="selectCategory('tools')"
+      [class.text-teal-400]="activeCategory() === 'tools'"
+      [class.text-slate-400]="activeCategory() !== 'tools'"
+      class="flex flex-col items-center text-xs font-medium">
+      <span class="text-lg">🛠️</span>
+      <span>Tools</span>
+    </button>
+  </nav>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+    <p>Minimi Front-End Web Application • Open Source MIT License • Built with Angular & Tailwind CSS</p>
+  </footer>
+</div>

@@ -1,0 +1,46 @@
+name: Build and Deploy to Online Repository
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Tests
+        run: npm test -- --watch=false
+
+      - name: Build Angular Application
+        run: npm run build -- --base-href "/online/"
+
+      - name: Deploy Static Pages to 'online' Repository
+        env:
+          GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          TARGET_REPO: ${{ github.repository_owner }}/online
+        run: |
+          cd dist/minimi-app/browser || cd dist/minimi-app || cd dist/browser
+          touch .nojekyll
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "deploy: automated static build from ${GITHUB_SHA::8}"
+          git branch -M main
+          git push -f https://x-access-token:${GH_PAT}@github.com/${TARGET_REPO}.git main:gh-pages
