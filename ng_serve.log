@@ -29,3 +29,11 @@ Application bundle generation complete. [4.602 seconds] - 2026-10-05T15:43:51.76
 Page reload sent to client(s).
 3:44:38 PM [vite] (client) ✨ new dependencies optimized: qrcode
 3:44:38 PM [vite] (client) ✨ optimized dependencies changed. reloading
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 147.12 kB |
+
+Application bundle generation complete. [2.629 seconds] - 2026-10-05T16:04:15.847Z
+
+Page reload sent to client(s).
