@@ -19,3 +19,13 @@ No output file changes.
 Application bundle generation complete. [0.009 seconds] - 2026-10-04T13:20:21.524Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 147.20 kB |
+
+Application bundle generation complete. [4.602 seconds] - 2026-10-05T15:43:51.768Z
+
+Page reload sent to client(s).
+3:44:38 PM [vite] (client) ✨ new dependencies optimized: qrcode
+3:44:38 PM [vite] (client) ✨ optimized dependencies changed. reloading
