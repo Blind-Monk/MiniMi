@@ -34,12 +34,25 @@ Welcome to the official documentation for **Minimi** ("100 games. 100 tools. Zer
 
 ---
 
-## 🚀 Quick Commands Summary
+## 🚀 Quick Commands Summary (Bun & NPM)
 
-| Command | Purpose |
-| :--- | :--- |
-| `npm install` | Install all dependencies |
-| `npm start` or `ng serve` | Launch local development server at `http://localhost:4200` |
-| `npm test` | Execute unit test suite with Vitest / Jasmine |
-| `npm run build` | Compile production static web bundle to `dist/minimi-app` |
-| `./scripts/deploy.sh` | Build and force-push static pages to `online` GitHub repo |
+Minimi natively supports both **Bun** (`bun` / `~/.bun/bin/bun`) and **Node.js** (`npm` / `npx`).
+
+| Command (Bun) | Command (NPM) | Purpose |
+| :--- | :--- | :--- |
+| `bun install` | `npm install` | Install all project dependencies |
+| `bun run start` | `npm start` / `npx ng serve` | Launch local development server at `http://localhost:4200` |
+| `bun run test` | `npm test` | Execute unit test suite with Vitest |
+| `bun run build` | `npm run build` | Compile production static web bundle to `dist/minimi/browser` |
+| `./scripts/deploy.sh` | `./scripts/deploy.sh` | Build and force-push static pages to `online` GitHub repo |
+
+---
+
+## 🛠 File & Executable Paths
+
+* **Bun Executable:** `bun` (if in system PATH) or `~/.bun/bin/bun`
+* **BunX Executable:** `bunx` or `~/.bun/bin/bunx`
+* **NPM / NPX:** `npm` / `npx`
+* **Angular CLI Executable:** `./node_modules/.bin/ng` or `bunx ng` / `npx ng`
+* **Main Script Path:** `scripts/deploy.sh`
+* **Build Artifact Output Path:** `dist/minimi/browser` (or `dist/minimi`)

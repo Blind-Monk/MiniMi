@@ -7,10 +7,12 @@ Minimi includes automated scripts and GitHub Actions workflows to compile static
 ## 1. Automated Deployment via GitHub Actions
 
 The repository includes `.github/workflows/deploy.yml`. When code is pushed to `main` or `master`, GitHub Actions automatically:
-1. Checks out source code and installs Node dependencies.
-2. Executes unit tests (`npm test -- --watch=false`).
+1. Checks out source code and installs dependencies using **Bun**.
+2. Executes unit tests (`bun run test -- --watch=false`).
 3. Compiles production Angular static app with base href `/online/`:
    ```bash
+   bun run build -- --base-href "/online/"
+   # or with npm:
    npm run build -- --base-href "/online/"
    ```
 4. Creates `.nojekyll` to bypass Jekyll processing on GitHub Pages.
@@ -34,7 +36,8 @@ chmod +x scripts/deploy.sh
 ```
 
 ### Script Execution Steps:
-1. Builds production output: `npm run build -- --base-href "/online/"`.
-2. Locates build directory: `dist/minimi-app/browser`.
+1. Detects runtime: Checks for `bun` (`~/.bun/bin/bun`), falling back to `npm`.
+2. Builds production output: `$RUNNER build -- --base-href "/online/"`.
+3. Locates build directory: `dist/minimi/browser`.
 3. Adds `.nojekyll` file.
 4. Initializes temporary git repo, commits static artifacts, and force-pushes to `main:gh-pages` on the target `online` repository.

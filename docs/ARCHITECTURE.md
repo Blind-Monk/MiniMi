@@ -8,6 +8,7 @@
 ## 2. Technical Stack
 
 * **Framework:** Angular 18+ (Standalone Components, Zoneless support).
+* **Runtime & Package Managers:** Bun (`bun` / `~/.bun/bin/bun` / `bunx`) and Node.js (`npm` / `npx`). Bun is fully supported as an ultra-fast runtime, package manager, and test runner.
 * **State Management:** Angular Signals (`signal()`, `computed()`) for ultra-fast, reactive component reactivity.
 * **Styling & Layout:** Tailwind CSS v4 + Custom Dark Theme Color Tokens.
 * **Registry Architecture:** Decoupled item metadata registry (`CatalogItem[]`) powering global search, filtering, and dynamic component rendering.

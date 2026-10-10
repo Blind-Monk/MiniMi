@@ -6,13 +6,21 @@ This guide provides instructions for setting up, running, testing, and extending
 
 ## 1. Prerequisites
 
-Ensure your development workstation has the following installed:
-* **Node.js:** v18.0.0 or higher (v20+ recommended).
-* **npm:** v9.0.0 or higher.
-* **Git:** for version control.
+Ensure your development workstation has either **Bun** or **Node.js** installed:
 
-Check versions in terminal:
+### Executable Paths & System Verification:
+* **Bun Path:** `bun` (if installed globally) or `~/.bun/bin/bun`
+* **BunX Path:** `bunx` or `~/.bun/bin/bunx`
+* **Node.js:** v18.0.0 or higher (v20+ recommended)
+* **npm / npx:** v9.0.0 or higher
+* **Angular CLI binary path:** `./node_modules/.bin/ng`
+
+Verify installations:
 ```bash
+# Verify Bun (if installed)
+bun --version || ~/.bun/bin/bun --version
+
+# Verify Node & NPM
 node -v
 npm -v
 git --version
@@ -30,6 +38,10 @@ git --version
 
 2. **Install project dependencies:**
    ```bash
+   # Using Bun (Recommended - extremely fast dependency resolution)
+   bun install
+
+   # Or using npm
    npm install
    ```
 
@@ -37,11 +49,17 @@ git --version
 
 ## 3. Running in Development Mode
 
-To launch the Angular local development server:
+To launch the Angular local development server at `http://localhost:4200/`:
 
 ```bash
+# Using Bun
+bun run start
+# or using bunx directly:
+bunx ng serve
+
+# Using npm
 npm start
-# or
+# or:
 npx ng serve
 ```
 
@@ -50,11 +68,15 @@ npx ng serve
 
 ---
 
-## 4. Running Unit Tests
+## 4. Running Unit Tests & Linter
 
 Run the unit test suite:
 
 ```bash
+# Using Bun
+bun run test -- --watch=false
+
+# Using npm
 npm test -- --watch=false
 ```
 

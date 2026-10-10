@@ -28,7 +28,7 @@ You can easily host **Minimi** on **Microsoft Azure Static Web Apps** for free w
 5. **Build Details Presets:** Select **Angular**.
    * **App location:** `/`
    * **Api location:** *(Leave empty as Minimi has zero backend)*
-   * **Output location:** `dist/minimi-app/browser` (or `dist/minimi-app`)
+   * **Output location:** `dist/minimi/browser` (or `dist/minimi`)
 6. Click **Review + Create**, then **Create**.
 
 ---
@@ -59,6 +59,16 @@ jobs:
         with:
           submodules: true
 
+      - name: Setup Bun Environment
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install & Build with Bun
+        run: |
+          bun install
+          bun run build
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -68,7 +78,8 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "dist/minimi-app/browser"
+          output_location: "dist/minimi/browser"
+          skip_app_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

@@ -1,48 +1,89 @@
 # MinimiApp
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.24.
+Minimi is an open-source, client-side front-end web application featuring 100+ games and 100+ developer and productivity tools with zero backend dependencies and 100% phone/mobile compatibility.
 
-## Development server
+## 🚀 Quick Start with Bun or Node.js
 
-To start a local development server, run:
+Minimi fully supports both **Bun** (`bun`) and **Node.js** (`npm` / `npx`).
 
-```bash
-ng serve
-```
+### Path & Runtime Locations
+* **Bun Binary:** `bun` or `~/.bun/bin/bun`
+* **BunX Binary:** `bunx` or `~/.bun/bin/bunx`
+* **Node/NPM:** `npm` / `npx`
+* **Documentation Directory:** `docs/` (`docs/README.md`, `docs/DEVELOPMENT.md`, `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT_GITHUB_PAGES.md`, `docs/DEPLOYMENT_AZURE.md`)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Installing Dependencies
 
 ```bash
-ng generate --help
+# Using Bun (Recommended for ultra-fast installs)
+bun install
+
+# Or using npm
+npm install
 ```
 
-## Building
+### Development Server
 
-To build the project run:
+To start a local development server at `http://localhost:4200/`:
 
 ```bash
-ng build
+# Using Bun
+bun run start
+# or using bunx directly:
+bunx ng serve
+
+# Using npm / Angular CLI
+npm start
+# or:
+npx ng serve
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Building for Production
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+To compile the application and generate static assets in `dist/minimi/browser`:
 
 ```bash
-ng test
+# Using Bun
+bun run build
+
+# Using npm
+npm run build
 ```
+
+### Running Unit Tests
+
+To run the unit tests:
+
+```bash
+# Using Bun
+bun run test
+
+# Using npm
+npm test
+```
+
+### Deploying to GitHub Pages (`online` repository)
+
+Run the deployment script which automatically detects Bun or npm and deploys the production static build to the `online` repository:
+
+```bash
+# Execute deployment script
+./scripts/deploy.sh git@github.com:your-user/online.git
+```
+
+---
+
+## 📚 Documentation Index
+
+Detailed documentation for Minimi is located in the `docs/` directory:
+
+1. **[Docs Overview (`docs/README.md`)](docs/README.md)** — Guide to all project documentation.
+2. **[Architecture Overview (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md)** — Core structure, standalone components, signals, and routing.
+3. **[Development Guide (`docs/DEVELOPMENT.md`)](docs/DEVELOPMENT.md)** — Comprehensive local development workflow with Bun and npm.
+4. **[GitHub Pages Deployment (`docs/DEPLOYMENT_GITHUB_PAGES.md`)](docs/DEPLOYMENT_GITHUB_PAGES.md)** — CI/CD Actions and shell scripts targeting the `online` repository.
+5. **[Azure Deployment (`docs/DEPLOYMENT_AZURE.md`)](docs/DEPLOYMENT_AZURE.md)** — Deploying static web app builds to Azure Static Web Apps.
 
 ## Running end-to-end tests
 

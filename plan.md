@@ -75,6 +75,7 @@ To ensure **zero copyright or trademark infringement**, all games are "genre clo
 
 Minimi is built using **Angular 18+** with standalone components, Signals, and zero backend requirement.
 
+* **Runtime & Package Managers:** Full support for both **Bun** (`bun` / `~/.bun/bin/bun`) and **Node.js** (`npm` / `npx`). Bun is supported as a high-performance JavaScript runtime, package manager, and test runner.
 * **Core Framework:** Angular 18+ (Standalone Components, Zoneless support, Angular Signals for reactive state management).
 * **State Management:** `@ngrx/signals` (NgRx SignalStore) for feature-level state management.
 * **Routing:** Angular Router with lazy `loadComponent` route-level code splitting. Every game and tool resides in its own lazily loaded bundle chunk.
@@ -423,7 +424,7 @@ minimi/
 
 Minimi implements a comprehensive multi-layered automated testing pipeline:
 
-### 7.1 Unit Testing (Jest / Vitest)
+### 7.1 Unit Testing (Jest / Vitest / Bun)
 * **Pure Game Logic (.logic.ts):** Game rules, grid states, solvers, and physics tick functions are extracted into standalone TypeScript files with pure functions.
   * *Snake:* Growth mechanics, border collisions, self-intersections.
   * *2048:* Tile slide/merge rules, random spawn positions, loss detection.
@@ -474,22 +475,19 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+      - name: Setup Bun Environment
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: latest
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Install Dependencies with Bun
+        run: bun install
 
-      - name: Run Linter and Tests
-        run: |
-          npm run lint
-          npm run test -- --watch=false --browsers=ChromeHeadless
+      - name: Run Tests with Bun / Angular CLI
+        run: bun run test -- --watch=false --browsers=ChromeHeadless
 
-      - name: Build Angular Static Application
-        run: npm run build -- --configuration production --base-href "/online/"
+      - name: Build Angular Static Application with Bun
+        run: bun run build -- --configuration production --base-href "/online/"
 
       - name: Deploy Static Build to 'online' Repository
         env:
@@ -512,8 +510,20 @@ jobs:
 #!/usr/bin/env bash
 set -e
 
-echo "=== Building Minimi for Production ==="
-npm run build -- --configuration production --base-href "/online/"
+# Detect Bun or fallback to npm/npx
+if command -v bun >/dev/null 2>&1; then
+  RUNNER="bun"
+  EXEC="bunx"
+elif [ -f "$HOME/.bun/bin/bun" ]; then
+  RUNNER="$HOME/.bun/bin/bun"
+  EXEC="$HOME/.bun/bin/bunx"
+else
+  RUNNER="npm run"
+  EXEC="npx"
+fi
+
+echo "=== Building Minimi for Production using $RUNNER ==="
+$RUNNER build -- --configuration production --base-href "/online/"
 
 DIST_DIR="dist/minimi/browser"
 if [ ! -d "$DIST_DIR" ]; then
