@@ -3,7 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import QRCode from 'qrcode';
 
-export type ModuleShape = 'square' | 'circle' | 'triangle' | 'diamond' | 'rounded' | 'threads';
+export type ModuleShape =
+  | 'square'
+  | 'circle'
+  | 'rounded'
+  | 'diamond'
+  | 'triangle'
+  | 'threads'
+  | 'star'
+  | 'heart'
+  | 'hexagon'
+  | 'cross'
+  | 'custom';
 
 @Component({
   selector: 'app-qr-gen',
@@ -40,19 +51,36 @@ export type ModuleShape = 'square' | 'circle' | 'triangle' | 'diamond' | 'rounde
           <!-- Module Shape Selector -->
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Module Pattern Shape</label>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
               @for (shape of shapes; track shape.id) {
                 <button
                   (click)="setShape(shape.id)"
                   [class.border-teal-500]="selectedShape === shape.id"
                   [class.bg-teal-950]="selectedShape === shape.id"
                   [class.text-teal-300]="selectedShape === shape.id"
-                  class="flex items-center justify-center space-x-1 py-1.5 px-2 bg-slate-950 border border-slate-800 rounded-lg font-medium text-[11px] hover:border-slate-600 transition-all">
+                  class="flex items-center justify-center space-x-1 py-1.5 px-1.5 bg-slate-950 border border-slate-800 rounded-lg font-medium text-[10px] hover:border-slate-600 transition-all">
                   <span>{{ shape.icon }}</span>
                   <span>{{ shape.label }}</span>
                 </button>
               }
             </div>
+
+            <!-- Custom Module Image Upload Field -->
+            @if (selectedShape === 'custom') {
+              <div class="mt-2 bg-slate-950 p-2.5 rounded-lg border border-teal-500/50 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="font-semibold text-teal-300">Upload Custom Module Image/SVG</label>
+                  @if (customModuleSrc) {
+                    <button (click)="removeCustomModule()" class="text-red-400 hover:text-red-300 font-bold text-[10px]">Remove</button>
+                  }
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onCustomModuleUpload($event)"
+                  class="block w-full text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-slate-800 file:text-teal-300 hover:file:bg-slate-700 cursor-pointer">
+              </div>
+            }
           </div>
 
           <!-- Color Pickers -->
@@ -135,7 +163,7 @@ export type ModuleShape = 'square' | 'circle' | 'triangle' | 'diamond' | 'rounde
             <canvas #qrCanvas width="280" height="280" class="rounded"></canvas>
           </div>
           <p class="text-[11px] text-slate-500 mt-3 text-center">
-            Error correction level H enabled. High-contrast readability guaranteed across custom shapes & background images.
+            Error correction level H enabled. High-contrast readability guaranteed across custom shapes, custom image modules & background images.
           </p>
         </div>
       </div>
@@ -148,11 +176,13 @@ export class QrGenComponent implements AfterViewInit {
   qrData = 'https://github.com/areyouroot/online';
   fgColor = '#0F172A';
   bgColor = '#FFFFFF';
-  bgOpacity = 30; // 30% background tint overlay when bg image is present
+  bgOpacity = 30;
   selectedShape: ModuleShape = 'square';
 
   logoSrc: string | null = null;
   bgSrc: string | null = null;
+  customModuleSrc: string | null = null;
+  customModuleImg: HTMLImageElement | null = null;
 
   shapes: { id: ModuleShape; label: string; icon: string }[] = [
     { id: 'square', label: 'Square', icon: '⬛' },
@@ -160,7 +190,12 @@ export class QrGenComponent implements AfterViewInit {
     { id: 'rounded', label: 'Rounded', icon: '⏹️' },
     { id: 'diamond', label: 'Diamond', icon: '🔷' },
     { id: 'triangle', label: 'Triangle', icon: '🔺' },
-    { id: 'threads', label: 'Threads', icon: '🧵' }
+    { id: 'threads', label: 'Threads', icon: '🧵' },
+    { id: 'star', label: 'Star', icon: '⭐' },
+    { id: 'heart', label: 'Heart', icon: '❤️' },
+    { id: 'hexagon', label: 'Hexagon', icon: '⬢' },
+    { id: 'cross', label: 'Cross', icon: '➕' },
+    { id: 'custom', label: 'Custom', icon: '🎨' }
   ];
 
   ngAfterViewInit() {
@@ -204,7 +239,6 @@ export class QrGenComponent implements AfterViewInit {
         const bgImg = new Image();
         bgImg.onload = () => {
           ctx.drawImage(bgImg, 0, 0, size, size);
-          // Apply background color overlay tint
           ctx.fillStyle = this.bgColor;
           ctx.globalAlpha = this.bgOpacity / 100;
           ctx.fillRect(0, 0, size, size);
@@ -237,7 +271,7 @@ export class QrGenComponent implements AfterViewInit {
         const x = padding + c * tileSize;
         const y = padding + r * tileSize;
 
-        // Finder patterns get drawn with standard sharp/rounded precision for maximum scannability
+        // Finder patterns get drawn with standard sharp precision for maximum scannability
         if (isFinder(r, c)) {
           ctx.fillRect(x, y, tileSize + 0.3, tileSize + 0.3);
           continue;
@@ -257,7 +291,7 @@ export class QrGenComponent implements AfterViewInit {
           const x = (size - logoSize) / 2;
           const y = (size - logoSize) / 2;
 
-          // Draw solid background circle/round rectangle behind logo for contrast
+          // Background circle for contrast
           ctx.fillStyle = this.bgColor;
           ctx.beginPath();
           ctx.arc(size / 2, size / 2, logoSize / 2 + 5, 0, Math.PI * 2);
@@ -328,12 +362,131 @@ export class QrGenComponent implements AfterViewInit {
         ctx.fill();
         break;
       }
+      case 'star': {
+        this.drawStar(ctx, cx, cy, 5, s * 0.5, s * 0.22);
+        break;
+      }
+      case 'heart': {
+        this.drawHeart(ctx, x, y, s);
+        break;
+      }
+      case 'hexagon': {
+        this.drawHexagon(ctx, cx, cy, s * 0.45);
+        break;
+      }
+      case 'cross': {
+        const w = s * 0.35;
+        ctx.fillRect(cx - w / 2, y, w, s);
+        ctx.fillRect(x, cy - w / 2, s, w);
+        break;
+      }
+      case 'custom': {
+        if (this.customModuleImg && this.customModuleImg.complete) {
+          ctx.drawImage(this.customModuleImg, x, y, s, s);
+        } else {
+          // Fallback to square if custom image not uploaded yet
+          ctx.fillRect(x, y, s + 0.3, s + 0.3);
+        }
+        break;
+      }
       case 'square':
       default: {
         ctx.fillRect(x, y, s + 0.3, s + 0.3);
         break;
       }
     }
+  }
+
+  private drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) {
+    let rot = (Math.PI / 2) * 3;
+    let x = cx;
+    let y = cy;
+    const step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * outerRadius;
+      y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  private drawHeart(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+    ctx.beginPath();
+    const topCurveHeight = s * 0.3;
+    ctx.moveTo(x + s / 2, y + s * 0.25);
+    // top left curve
+    ctx.bezierCurveTo(
+      x + s / 2, y,
+      x, y,
+      x, y + topCurveHeight
+    );
+    // bottom left curve
+    ctx.bezierCurveTo(
+      x, y + (s + topCurveHeight) / 2,
+      x + s / 2, y + s * 0.85,
+      x + s / 2, y + s
+    );
+    // bottom right curve
+    ctx.bezierCurveTo(
+      x + s / 2, y + s * 0.85,
+      x + s, y + (s + topCurveHeight) / 2,
+      x + s, y + topCurveHeight
+    );
+    // top right curve
+    ctx.bezierCurveTo(
+      x + s, y,
+      x + s / 2, y,
+      x + s / 2, y + s * 0.25
+    );
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  private drawHexagon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  onCustomModuleUpload(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.customModuleSrc = e.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          this.customModuleImg = img;
+          this.renderQR();
+        };
+        img.src = this.customModuleSrc;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeCustomModule() {
+    this.customModuleSrc = null;
+    this.customModuleImg = null;
+    this.renderQR();
   }
 
   onLogoUpload(event: Event) {
