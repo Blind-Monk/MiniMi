@@ -16,6 +16,7 @@ import { Base64Component } from './features/tools/base64/base64.component';
 import { QrGenComponent } from './features/tools/qr-gen/qr-gen.component';
 import { HashGenComponent } from './features/tools/hash-gen/hash-gen.component';
 import { PassGenComponent } from './features/tools/pass-gen/pass-gen.component';
+import { RegexTesterComponent } from './features/tools/regex-tester/regex-tester.component';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +33,8 @@ import { PassGenComponent } from './features/tools/pass-gen/pass-gen.component';
     Base64Component,
     QrGenComponent,
     HashGenComponent,
-    PassGenComponent
+    PassGenComponent,
+    RegexTesterComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
