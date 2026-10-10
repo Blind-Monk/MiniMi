@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { TextureGenerator } from '../../../core/utils/texture-generator';
 
 interface ChessPiece {
   type: 'p' | 'r' | 'n' | 'b' | 'q' | 'k';
@@ -93,7 +94,13 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   private highlightMeshes: THREE.Mesh[] = [];
   private selectedPiece: ChessPiece | null = null;
 
+  private lightMarbleTexture!: THREE.CanvasTexture;
+  private darkMarbleTexture!: THREE.CanvasTexture;
+
   ngAfterViewInit() {
+    this.lightMarbleTexture = TextureGenerator.createMarbleTexture(false);
+    this.darkMarbleTexture = TextureGenerator.createMarbleTexture(true);
+
     this.initThreeJS();
     this.buildBoard();
     this.setupInitialPieces();
@@ -135,7 +142,7 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
     const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(ambLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(5, 12, 5);
     this.scene.add(dirLight);
 
@@ -148,8 +155,9 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
       for (let c = 0; c < 8; c++) {
         const isDark = (r + c) % 2 === 1;
         const mat = new THREE.MeshStandardMaterial({
-          color: isDark ? 0x334155 : 0xe2e8f0,
-          roughness: 0.4
+          map: isDark ? this.darkMarbleTexture : this.lightMarbleTexture,
+          roughness: 0.2,
+          metalness: 0.1
         });
         const tile = new THREE.Mesh(tileGeo, mat);
         tile.position.set(c - 3.5, 0, r - 3.5);
@@ -163,11 +171,9 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   private setupInitialPieces() {
     const backRow: ('r' | 'n' | 'b' | 'q' | 'k' | 'b' | 'n' | 'r')[] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
 
-    // Black pieces (Row 0 & 1)
     backRow.forEach((type, col) => this.addPiece(type, 'b', 0, col));
     for (let col = 0; col < 8; col++) this.addPiece('p', 'b', 1, col);
 
-    // White pieces (Row 6 & 7)
     for (let col = 0; col < 8; col++) this.addPiece('p', 'w', 6, col);
     backRow.forEach((type, col) => this.addPiece(type, 'w', 7, col));
   }
@@ -175,12 +181,11 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   private addPiece(type: 'p' | 'r' | 'n' | 'b' | 'q' | 'k', color: 'w' | 'b', row: number, col: number) {
     const group = new THREE.Group();
     const mat = new THREE.MeshStandardMaterial({
-      color: color === 'w' ? 0xf59e0b : 0x475569,
-      roughness: 0.3,
-      metalness: 0.2
+      color: color === 'w' ? 0xf59e0b : 0x334155,
+      roughness: 0.2,
+      metalness: 0.4
     });
 
-    // Simple procedural 3D piece shapes
     let geo: THREE.BufferGeometry;
     if (type === 'p') geo = new THREE.CylinderGeometry(0.2, 0.3, 0.6);
     else if (type === 'r') geo = new THREE.BoxGeometry(0.5, 0.8, 0.5);
@@ -221,13 +226,11 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
         }
 
         if (clickedPiece && clickedPiece.color === this.selectedPiece.color) {
-          // Select new piece
           this.selectedPiece = clickedPiece;
           this.highlightMoves(clickedPiece);
           return;
         }
 
-        // Move piece
         this.movePiece(this.selectedPiece, row, col);
         this.selectedPiece = null;
         this.clearHighlights();
@@ -244,7 +247,6 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide });
 
-    // Highlight adjacent tiles for simplicity
     for (let dr = -1; dr <= 1; dr++) {
       for (let dc = -1; dc <= 1; dc++) {
         if (dr === 0 && dc === 0) continue;
@@ -266,7 +268,6 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   }
 
   private movePiece(piece: ChessPiece, targetRow: number, targetCol: number) {
-    // Capture enemy piece if present
     const targetIdx = this.pieces.findIndex(p => p.row === targetRow && p.col === targetCol);
     if (targetIdx !== -1) {
       const captured = this.pieces[targetIdx];
@@ -276,15 +277,12 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
       this.pieces.splice(targetIdx, 1);
     }
 
-    // Move mesh
     piece.row = targetRow;
     piece.col = targetCol;
     piece.mesh.position.set(targetCol - 3.5, 0.1, targetRow - 3.5);
 
-    // Switch turn
     this.currentTurn.update(t => t === 'w' ? 'b' : 'w');
 
-    // Trigger AI move if enabled
     if (this.vsAI() && this.currentTurn() === 'b') {
       setTimeout(() => this.makeAIMove(), 500);
     }

@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, Hos
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
+import { TextureGenerator } from '../../../core/utils/texture-generator';
 
 interface PlayerConfig {
   id: number;
@@ -170,7 +171,13 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private animFrameId: number = 0;
   private activeKeys = new Set<string>();
 
+  private asphaltTexture!: THREE.CanvasTexture;
+  private grassTexture!: THREE.CanvasTexture;
+
   ngAfterViewInit() {
+    this.asphaltTexture = TextureGenerator.createAsphaltTexture();
+    this.grassTexture = TextureGenerator.createGrassTexture();
+
     this.initRaceWorld();
     this.startRaceLoop();
   }
@@ -246,7 +253,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const container = this.containerRef.nativeElement;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0284c7); // Sky blue
+    this.scene.background = new THREE.Color(0x0284c7);
     this.scene.fog = new THREE.FogExp2(0x0284c7, 0.005);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -254,25 +261,28 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setScissorTest(true);
 
-    // Ground grass plane
+    // Textured Grass Turf Ground
     const grassGeo = new THREE.PlaneGeometry(500, 500);
-    const grassMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
+    const grassMat = new THREE.MeshStandardMaterial({
+      map: this.grassTexture,
+      roughness: 0.8
+    });
     const grass = new THREE.Mesh(grassGeo, grassMat);
     grass.rotation.x = -Math.PI / 2;
     this.scene.add(grass);
 
-    // Circuit Track Mesh
+    // Textured Asphalt Circuit
     this.buildCircuitTrack();
 
-    // Add Lights
+    // Lighting
     const amb = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(amb);
 
-    const sun = new THREE.DirectionalLight(0xfffbeb, 1.2);
+    const sun = new THREE.DirectionalLight(0xfffbeb, 1.4);
     sun.position.set(50, 100, 50);
     this.scene.add(sun);
 
-    // Initialize Cars (Players + AI)
+    // Cars with Glossy Metallic PBR finish
     const carColors = ['#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7', '#ec4899'];
     for (let i = 0; i < 6; i++) {
       const isAI = i >= this.playerCount();
@@ -312,7 +322,11 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     const extrudeSettings = { depth: 0.1, bevelEnabled: false };
     const roadGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const roadMat = new THREE.MeshStandardMaterial({
+      map: this.asphaltTexture,
+      roughness: 0.4,
+      metalness: 0.1
+    });
     const roadMesh = new THREE.Mesh(roadGeo, roadMat);
     roadMesh.rotation.x = Math.PI / 2;
     roadMesh.position.y = 0.05;
@@ -322,23 +336,27 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private createCarMesh(colorHex: string): THREE.Group {
     const group = new THREE.Group();
 
-    // Body chassis
+    // Glossy Metallic Paint Body Chassis
     const bodyGeo = new THREE.BoxGeometry(1.6, 0.5, 3);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.6, roughness: 0.3 });
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: colorHex,
+      metalness: 0.8,
+      roughness: 0.2
+    });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = 0.3;
     group.add(body);
 
-    // Cabin roof
+    // Glass Roof Cabin
     const cabinGeo = new THREE.BoxGeometry(1.2, 0.4, 1.4);
-    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
     cabin.position.set(0, 0.7, -0.2);
     group.add(cabin);
 
-    // Wheels
+    // Rubber Wheels with Chrome Hubs
     const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 12);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
     const positions = [[-0.8, 0.3, 1], [0.8, 0.3, 1], [-0.8, 0.3, -1], [0.8, 0.3, -1]];
     positions.forEach(pos => {
       const wheel = new THREE.Mesh(wheelGeo, wheelMat);
@@ -362,7 +380,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private updateRacePhysics() {
     if (this.raceWinner()) return;
 
-    // Gamepad Polling
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
 
     this.cars.forEach((car, idx) => {

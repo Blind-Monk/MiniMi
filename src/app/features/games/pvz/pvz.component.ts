@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { TextureGenerator } from '../../../core/utils/texture-generator';
 
 interface SeedCard {
   id: string;
@@ -25,7 +26,7 @@ interface PlacedPlant3D {
 interface Zombie3D {
   id: number;
   row: number;
-  x: number; // 0 to 9 in world coordinates
+  x: number;
   type: 'shambler' | 'conehead' | 'buckethead' | 'runner';
   hp: number;
   maxHp: number;
@@ -115,7 +116,6 @@ interface SunOrb3D {
       <div #canvasContainer class="relative w-full aspect-[16/9] max-h-[560px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center">
         <canvas #canvas class="w-full h-full block cursor-crosshair"></canvas>
 
-        <!-- Floating HUD Canvas Overlay -->
         <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs text-slate-300 pointer-events-none">
           🎯 Click tiles to place plant • Sun collects automatically or on click
         </div>
@@ -165,11 +165,16 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   private sunOrbs: SunOrb3D[] = [];
   private lawnTiles: THREE.Mesh[] = [];
 
+  private grassTexture!: THREE.CanvasTexture;
+  private woodTexture!: THREE.CanvasTexture;
+
   private tickCount = 0;
   private nextId = 1;
-  private clock = new THREE.Clock();
 
   ngAfterViewInit() {
+    this.grassTexture = TextureGenerator.createGrassTexture();
+    this.woodTexture = TextureGenerator.createWoodTexture(true);
+
     this.initThreeJS();
     this.buildLawn();
     this.startLoop();
@@ -220,43 +225,44 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // Lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff5ea, 1.2);
+    const dirLight = new THREE.DirectionalLight(0xfff5ea, 1.4);
     dirLight.position.set(8, 16, 10);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
     this.scene.add(dirLight);
 
-    // Event listeners
     canvas.addEventListener('click', (e) => this.onCanvasClick(e));
-    window.addEventListener('resize', () => this.onWindowResize());
   }
 
   private buildLawn() {
-    // Ground Base Frame
+    // Textured Soil Base
     const baseGeo = new THREE.BoxGeometry(11, 0.5, 7);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x3f2312, roughness: 0.9 });
+    const baseMat = new THREE.MeshStandardMaterial({
+      map: this.woodTexture,
+      roughness: 0.9
+    });
     const baseMesh = new THREE.Mesh(baseGeo, baseMat);
     baseMesh.position.set(0, -0.3, 0);
     baseMesh.receiveShadow = true;
     this.scene.add(baseMesh);
 
-    // 5 Rows x 9 Cols Grass Grid
+    // Textured Grass Grid
     const tileGeo = new THREE.BoxGeometry(1, 0.1, 1);
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 9; c++) {
         const isDark = (r + c) % 2 === 0;
         const tileMat = new THREE.MeshStandardMaterial({
-          color: isDark ? 0x22c55e : 0x15803d,
-          roughness: 0.6
+          map: this.grassTexture,
+          color: isDark ? 0x22c55e : 0x16a34a,
+          roughness: 0.5
         });
         const tile = new THREE.Mesh(tileGeo, tileMat);
-        const x = c - 4; // -4 to +4
-        const z = r - 2; // -2 to +2
+        const x = c - 4;
+        const z = r - 2;
         tile.position.set(x, 0, z);
         tile.receiveShadow = true;
         tile.userData = { row: r, col: c };
@@ -275,7 +281,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // Check click on Sun Orbs
     const sunMeshes = this.sunOrbs.map(s => s.mesh);
     const sunHits = this.raycaster.intersectObjects(sunMeshes, true);
     if (sunHits.length > 0) {
@@ -287,7 +292,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
       }
     }
 
-    // Check click on Lawn Tile to plant
     const tileHits = this.raycaster.intersectObjects(this.lawnTiles);
     if (tileHits.length > 0) {
       const tile = tileHits[0].object as THREE.Mesh;
@@ -299,8 +303,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   private placePlant(row: number, col: number) {
     const card = this.selectedSeed();
     if (!card || this.sun() < card.cost) return;
-
-    // Check if tile occupied
     if (this.placedPlants.some(p => p.row === row && p.col === col)) return;
 
     this.sun.update(s => s - card.cost);
@@ -312,7 +314,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     this.scene.add(mesh);
 
     if (card.id === 'cherrybomb') {
-      // Immediate 3x3 explosion effect
       this.triggerCherryExplosion(row, col, x, z);
       this.scene.remove(mesh);
       return;
@@ -335,39 +336,40 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     const group = new THREE.Group();
 
     if (type === 'sunbloom') {
-      // Stem
       const stemGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.6);
       const stemMat = new THREE.MeshStandardMaterial({ color: 0x16a34a });
       const stem = new THREE.Mesh(stemGeo, stemMat);
       stem.position.y = 0.3;
+      stem.castShadow = true;
       group.add(stem);
 
-      // Head Flower
       const headGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 12);
-      const headMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
+      const headMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 });
       const head = new THREE.Mesh(headGeo, headMat);
       head.position.y = 0.6;
       head.rotation.x = Math.PI / 4;
+      head.castShadow = true;
       group.add(head);
     } else if (type === 'peltpod') {
-      // Stem & Head shooter
       const stemGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.5);
       const stemMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
       const stem = new THREE.Mesh(stemGeo, stemMat);
       stem.position.y = 0.25;
+      stem.castShadow = true;
       group.add(stem);
 
       const shooterGeo = new THREE.SphereGeometry(0.2, 16, 16);
-      const shooterMat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
+      const shooterMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.2 });
       const shooter = new THREE.Mesh(shooterGeo, shooterMat);
       shooter.position.set(0, 0.5, 0.1);
+      shooter.castShadow = true;
       group.add(shooter);
     } else if (type === 'barkblock') {
-      // Wooden block wall
       const wallGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+      const wallMat = new THREE.MeshStandardMaterial({ map: this.woodTexture, roughness: 0.9 });
       const wall = new THREE.Mesh(wallGeo, wallMat);
       wall.position.y = 0.35;
+      wall.castShadow = true;
       group.add(wall);
     }
 
@@ -375,7 +377,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   }
 
   private triggerCherryExplosion(row: number, col: number, worldX: number, worldZ: number) {
-    // Particle explosion mesh
     const expGeo = new THREE.SphereGeometry(1.5, 16, 16);
     const expMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8 });
     const expMesh = new THREE.Mesh(expGeo, expMat);
@@ -384,7 +385,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     setTimeout(() => this.scene.remove(expMesh), 300);
 
-    // Damage all zombies in 3x3 tiles
     this.zombies.forEach(z => {
       if (Math.abs(z.row - row) <= 1 && Math.abs(z.x - col) <= 1.5) {
         z.hp -= 150;
@@ -399,29 +399,32 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     const mesh = new THREE.Group();
     const bodyGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = 0.4;
+    body.castShadow = true;
     mesh.add(body);
 
     const headGeo = new THREE.SphereGeometry(0.22, 12, 12);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+    const headMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
     const head = new THREE.Mesh(headGeo, headMat);
     head.position.y = 0.9;
+    head.castShadow = true;
     mesh.add(head);
 
-    // Cone / Bucket attachment
     if (type === 'conehead') {
       const coneGeo = new THREE.ConeGeometry(0.2, 0.4, 8);
-      const coneMat = new THREE.MeshStandardMaterial({ color: 0xf97316 });
+      const coneMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
       const cone = new THREE.Mesh(coneGeo, coneMat);
       cone.position.y = 1.25;
+      cone.castShadow = true;
       mesh.add(cone);
     } else if (type === 'buckethead') {
       const buckGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.3);
-      const buckMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+      const buckMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
       const bucket = new THREE.Mesh(buckGeo, buckMat);
       bucket.position.y = 1.2;
+      bucket.castShadow = true;
       mesh.add(bucket);
     }
 
@@ -475,7 +478,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
       this.animFrameId = requestAnimationFrame(loop);
       this.tickCount++;
 
-      // Game Logic Ticks
       if (!this.gameOver()) {
         this.updateGameLogic();
       }
@@ -486,7 +488,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateGameLogic() {
-    // 1. Spawning Zombies
     if (this.tickCount % 120 === 0) {
       this.spawnZombie();
       if (this.tickCount % 600 === 0) {
@@ -494,14 +495,12 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
       }
     }
 
-    // 2. Passive Sky Sun
     if (this.tickCount % 200 === 0) {
       const rx = (Math.random() * 8) - 4;
       const rz = (Math.random() * 4) - 2;
       this.spawnSunOrb(rx, 3, rz);
     }
 
-    // 3. Plant Actions
     this.placedPlants.forEach(plant => {
       if (plant.type === 'sunbloom' && (this.tickCount - plant.lastAction) >= 180) {
         const x = plant.col - 4;
@@ -509,7 +508,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
         this.spawnSunOrb(x, 0.5, z);
         plant.lastAction = this.tickCount;
       } else if (plant.type === 'peltpod' && (this.tickCount - plant.lastAction) >= 40) {
-        // Shoot if zombie in row
         const hasZombie = this.zombies.some(z => z.row === plant.row && z.x > plant.col);
         if (hasZombie) {
           const x = plant.col - 4 + 0.3;
@@ -531,7 +529,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
       }
     });
 
-    // 4. Update Projectiles
     const remainingProjs: Projectile3D[] = [];
     this.projectiles.forEach(p => {
       p.mesh.position.x += 0.12;
@@ -553,7 +550,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     });
     this.projectiles = remainingProjs;
 
-    // 5. Update Zombies & Collisions
     const remainingZombies: Zombie3D[] = [];
     this.zombies.forEach(z => {
       if (z.hp <= 0) {
@@ -562,7 +558,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
         return;
       }
 
-      // Check plant collision
       const targetPlant = this.placedPlants.find(p => p.row === z.row && Math.abs((p.col - 4) - (z.x - 4)) < 0.4);
       if (targetPlant) {
         targetPlant.hp -= 0.5;
@@ -571,7 +566,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
         z.mesh.position.x = z.x - 4;
       }
 
-      // Game over check
       if (z.mesh.position.x < -4.5) {
         this.gameOver.set(true);
       } else {
@@ -580,7 +574,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     });
     this.zombies = remainingZombies;
 
-    // Clean up dead plants
     const activePlants: PlacedPlant3D[] = [];
     this.placedPlants.forEach(p => {
       if (p.hp <= 0) {
@@ -591,7 +584,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     });
     this.placedPlants = activePlants;
 
-    // Auto collect sun if close
     const activeOrbs: SunOrb3D[] = [];
     this.sunOrbs.forEach(orb => {
       if (orb.y > 0.5) orb.y -= 0.03;
@@ -611,14 +603,6 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     this.zombies = [];
     this.projectiles = [];
     this.sunOrbs = [];
-  }
-
-  private onWindowResize() {
-    if (!this.containerRef || !this.renderer || !this.camera) return;
-    const container = this.containerRef.nativeElement;
-    this.camera.aspect = container.clientWidth / container.clientHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
   }
 
   ngOnDestroy() {
