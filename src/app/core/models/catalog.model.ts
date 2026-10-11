@@ -205,5 +205,15 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     icon: '🔑',
     tags: ['Security', 'Password', 'Utility'],
     isPopular: true
+  },
+  {
+    id: 'pdf-tools',
+    name: 'PDF Swiss Army Knife & Utilities',
+    category: 'tools',
+    subcategory: 'Documents / Utilities',
+    description: 'Complete client-side PDF processing suite: Compress, Convert (Word/Excel/Images), Merge/Split/Rotate, Edit/Watermark/Redact, Fill & Sign, AI Chat Assistant, and Camera Scanner.',
+    icon: '📄',
+    tags: ['PDF', 'Compress', 'Convert', 'Edit', 'Sign', 'AI', 'Scanner', 'Popular'],
+    isPopular: true
   }
 ];

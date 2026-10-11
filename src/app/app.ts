@@ -26,6 +26,7 @@ import { QrGenComponent } from './features/tools/qr-gen/qr-gen.component';
 import { HashGenComponent } from './features/tools/hash-gen/hash-gen.component';
 import { PassGenComponent } from './features/tools/pass-gen/pass-gen.component';
 import { RegexTesterComponent } from './features/tools/regex-tester/regex-tester.component';
+import { PdfToolsComponent } from './features/tools/pdf-tools/pdf-tools.component';
 
 @Component({
   selector: 'app-root',
@@ -51,7 +52,8 @@ import { RegexTesterComponent } from './features/tools/regex-tester/regex-tester
     QrGenComponent,
     HashGenComponent,
     PassGenComponent,
-    RegexTesterComponent
+    RegexTesterComponent,
+    PdfToolsComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
