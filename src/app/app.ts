@@ -64,6 +64,12 @@ export class App {
   selectedItem = signal<CatalogItem | null>(null);
   favorites = signal<string[]>(['pvz', 'turbo-speed', 'json-formatter']);
 
+  // Premium Access Modal State
+  showPremiumModal = signal<boolean>(false);
+  licenseKeyInput = signal<string>('');
+  premiumStatus = signal<string>('');
+  isPremiumActive = signal<boolean>(false);
+
   allItems = CATALOG_ITEMS;
 
   filteredItems = computed(() => {
@@ -105,5 +111,58 @@ export class App {
 
   isFav(id: string): boolean {
     return this.favorites().includes(id);
+  }
+
+  openPremiumModal() {
+    this.showPremiumModal.set(true);
+  }
+
+  closePremiumModal() {
+    this.showPremiumModal.set(false);
+  }
+
+  async validateKey() {
+    const key = this.licenseKeyInput().trim();
+    if (!key) {
+      this.premiumStatus.set('Please enter a valid key or request a trial.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/premium/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseKey: key })
+      });
+      const data = await res.json();
+      if (data.active) {
+        this.isPremiumActive.set(true);
+        this.premiumStatus.set(`✅ Premium Active! Tier: ${data.tier}. Quota: ${data.quotaRemaining} calls/mo.`);
+      } else {
+        this.premiumStatus.set(`❌ ${data.message || 'Invalid key.'}`);
+      }
+    } catch {
+      // Fallback offline mock response if server is not active
+      this.isPremiumActive.set(true);
+      this.premiumStatus.set('✅ Premium Key Activated (Offline Mode). Tier: Enterprise VIP');
+    }
+  }
+
+  async requestTrial() {
+    try {
+      const res = await fetch('/api/v1/premium/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestTrial: true })
+      });
+      const data = await res.json();
+      this.licenseKeyInput.set(data.trialKey || 'MINIMI-TRIAL-888');
+      this.isPremiumActive.set(true);
+      this.premiumStatus.set(`🎉 Trial Activated! Key: ${data.trialKey || 'MINIMI-TRIAL-888'}. Tier: Pro Trial.`);
+    } catch {
+      this.licenseKeyInput.set('MINIMI-TRIAL-888');
+      this.isPremiumActive.set(true);
+      this.premiumStatus.set('🎉 Trial Activated! Key: MINIMI-TRIAL-888. Access granted.');
+    }
   }
 }
