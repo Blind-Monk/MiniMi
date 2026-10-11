@@ -333,6 +333,28 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     this.scene.add(dirLight);
 
     canvas.addEventListener('click', (e) => this.onCanvasClick(e));
+    canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+    window.addEventListener('resize', () => this.onWindowResize());
+  }
+
+  private onWindowResize() {
+    if (!this.renderer || !this.camera || !this.containerRef) return;
+    const container = this.containerRef.nativeElement;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (width && height) {
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(width, height);
+    }
+  }
+
+  private onTouchStart(event: TouchEvent) {
+    if (event.touches.length > 0) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      this.onCanvasClick({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+    }
   }
 
   private buildLawn() {
