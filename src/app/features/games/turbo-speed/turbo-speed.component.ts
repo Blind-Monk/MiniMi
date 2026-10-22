@@ -31,6 +31,8 @@ interface CarState {
   gear: number;
   lap: number;
   mesh: THREE.Group;
+  bodyMesh?: THREE.Mesh;
+  brakeLightMat?: THREE.MeshStandardMaterial;
   color: string;
   isAI: boolean;
   isCop?: boolean;
@@ -39,6 +41,9 @@ interface CarState {
   data: CarData;
   pos: THREE.Vector3;
   tangent: THREE.Vector3;
+  steeringAngle: number;
+  pitchAngle: number;
+  rollAngle: number;
 }
 
 @Component({
@@ -293,7 +298,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       this.showcaseScene.remove(this.showcaseMesh);
     }
     const carData = this.carRoster[this.selectedCarIndex()];
-    this.showcaseMesh = this.createDetailedCarMesh(carData);
+    this.showcaseMesh = this.createDetailedCarMesh(carData).group;
     this.showcaseMesh.position.set(0, 0.1, 0);
     this.showcaseScene.add(this.showcaseMesh);
   }
@@ -368,7 +373,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // --- Spline 3D Track & Environment Engine ---
+  // --- Spline 3D Track & Detailed Environment Engine ---
   private initRaceWorld() {
     if (!this.canvasRef || !this.containerRef) return;
     const canvas = this.canvasRef.nativeElement;
@@ -394,6 +399,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     this.build3DTrackEnvironment(track);
     this.initCarsAndTraffic(track);
+    this.renderSplitScreenViewports();
   }
 
   private build3DTrackEnvironment(track: TrackData) {
@@ -401,7 +407,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const isClosed = track.type === 'Circuit';
     this.currentTrackCurve = new THREE.CatmullRomCurve3(curvePoints, isClosed);
 
-    const points = this.currentTrackCurve.getPoints(200);
+    const points = this.currentTrackCurve.getPoints(300);
 
     const shape = new THREE.Shape();
     shape.moveTo(-6, 0);
@@ -409,13 +415,13 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     shape.lineTo(6, -0.2);
     shape.lineTo(-6, -0.2);
 
-    const extrudeSettings = { steps: 200, extrudePath: this.currentTrackCurve, bevelEnabled: false };
+    const extrudeSettings = { steps: 300, extrudePath: this.currentTrackCurve, bevelEnabled: false };
     const roadGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTexture, roughness: 0.5 });
+    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTexture, roughness: 0.4, metalness: 0.1 });
     const roadMesh = new THREE.Mesh(roadGeo, roadMat);
     this.scene.add(roadMesh);
 
-    const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+    const groundGeo = new THREE.PlaneGeometry(1200, 1200);
     const groundMat = new THREE.MeshStandardMaterial({ color: track.groundColor, map: this.grassTexture, roughness: 0.9 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -427,49 +433,66 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   private addSceneryProps(track: TrackData, pathPoints: THREE.Vector3[]) {
     pathPoints.forEach((pt, idx) => {
-      if (idx % 6 !== 0) return;
+      if (idx % 4 !== 0) return;
 
       const norm = this.currentTrackCurve.getTangentAt(idx / pathPoints.length);
       const perp = new THREE.Vector3(-norm.z, 0, norm.x).normalize();
 
+      // Guard Rails along edges
+      const railGeo = new THREE.BoxGeometry(0.3, 0.8, 4);
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+      const leftRail = new THREE.Mesh(railGeo, railMat);
+      leftRail.position.copy(pt).addScaledVector(perp, 6.4);
+      leftRail.position.y += 0.4;
+      leftRail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), norm);
+
+      const rightRail = new THREE.Mesh(railGeo, railMat);
+      rightRail.position.copy(pt).addScaledVector(perp, -6.4);
+      rightRail.position.y += 0.4;
+      rightRail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), norm);
+
+      this.scene.add(leftRail, rightRail);
+
+      // Scenery Specific Props
       if (track.scenery === 'city' || track.scenery === 'industrial' || track.scenery === 'vegas') {
+        const height = 18 + (idx % 6) * 8;
+        const bGeo = new THREE.BoxGeometry(12, height, 12);
         const buildingMat = new THREE.MeshStandardMaterial({
           color: track.scenery === 'vegas' ? (idx % 2 === 0 ? 0xf43f5e : 0x06b6d4) : 0x334155,
-          metalness: 0.5
+          metalness: 0.6,
+          roughness: 0.3
         });
-        const height = 15 + (idx % 5) * 10;
-        const bGeo = new THREE.BoxGeometry(10, height, 10);
 
         const leftB = new THREE.Mesh(bGeo, buildingMat);
-        leftB.position.copy(pt).addScaledVector(perp, 25);
+        leftB.position.copy(pt).addScaledVector(perp, 24);
         leftB.position.y += height / 2;
         this.scene.add(leftB);
 
         const rightB = new THREE.Mesh(bGeo, buildingMat);
-        rightB.position.copy(pt).addScaledVector(perp, -25);
+        rightB.position.copy(pt).addScaledVector(perp, -24);
         rightB.position.y += height / 2;
         this.scene.add(rightB);
       } else if (track.scenery === 'coastal' || track.scenery === 'forest' || track.scenery === 'alpine' || track.scenery === 'mystic') {
-        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3);
+        const trunkGeo = new THREE.CylinderGeometry(0.35, 0.55, 3.5);
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
-        const leavesGeo = new THREE.ConeGeometry(2, 5, 8);
+        const leavesGeo = new THREE.ConeGeometry(2.4, 5.5, 8);
         const leavesMat = new THREE.MeshStandardMaterial({ color: track.scenery === 'alpine' || track.scenery === 'mystic' ? 0xe0f2fe : 0x15803d });
 
         const treeGroup = new THREE.Group();
         const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-        trunk.position.y = 1.5;
+        trunk.position.y = 1.75;
         const leaves = new THREE.Mesh(leavesGeo, leavesMat);
-        leaves.position.y = 4;
+        leaves.position.y = 4.5;
         treeGroup.add(trunk, leaves);
 
-        const posLeft = pt.clone().addScaledVector(perp, 12 + Math.random() * 5);
+        const posLeft = pt.clone().addScaledVector(perp, 13 + Math.random() * 6);
         treeGroup.position.copy(posLeft);
         this.scene.add(treeGroup);
       }
     });
   }
 
-  // --- Cars, Spline Progress & Traffic Physics ---
+  // --- Detailed 3D Car Model Generator & Physics ---
   private initCarsAndTraffic(track: TrackData) {
     this.cars = [];
     this.trafficCars = [];
@@ -485,19 +508,19 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       const carData = isPlayer ? selectedCar : this.carRoster[i % this.carRoster.length];
       const color = isPlayer ? this.playerConfigs[i].color : carData.primaryColor;
 
-      const mesh = this.createDetailedCarMesh(carData, color);
-      this.scene.add(mesh);
+      const carBuild = this.createDetailedCarMesh(carData, color);
+      this.scene.add(carBuild.group);
 
       const isNight = this.timeOfDay() === 'Evening';
       let headlights: THREE.SpotLight[] | undefined;
       if (isNight) {
-        headlights = this.addHeadlights(mesh);
+        headlights = this.addHeadlights(carBuild.group);
       }
 
       const initialProgress = Math.max(0, 0.05 - (i * 0.008));
       const laneOffset = (i % 2 === 0 ? -2.0 : 2.0);
 
-      this.cars.push({
+      const carState: CarState = {
         progress: initialProgress,
         laneOffset,
         speed: 0,
@@ -506,22 +529,29 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         steer: carData.maxSteer * 2.5,
         gear: 1,
         lap: 1,
-        mesh,
+        mesh: carBuild.group,
+        bodyMesh: carBuild.bodyMesh,
+        brakeLightMat: carBuild.brakeLightMat,
         color,
         isAI: !isPlayer,
         headlights,
         data: carData,
         pos: new THREE.Vector3(),
-        tangent: new THREE.Vector3()
-      });
+        tangent: new THREE.Vector3(),
+        steeringAngle: 0,
+        pitchAngle: 0,
+        rollAngle: 0
+      };
+      this.updateCarSplineTransform(carState);
+      this.cars.push(carState);
     }
 
     if (this.trafficEnabled() && track.hasTrafficByDefault) {
       for (let i = 0; i < 5; i++) {
         const trafficData = this.carRoster[3];
-        const mesh = this.createDetailedCarMesh(trafficData, '#64748b');
-        this.scene.add(mesh);
-        this.trafficCars.push({
+        const carBuild = this.createDetailedCarMesh(trafficData, '#64748b');
+        this.scene.add(carBuild.group);
+        const tState: CarState = {
           progress: 0.15 + i * 0.15,
           laneOffset: (i % 2 === 0 ? -2.5 : 2.5),
           speed: 0.0006,
@@ -530,14 +560,19 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
           steer: 0,
           gear: 1,
           lap: 1,
-          mesh,
+          mesh: carBuild.group,
           color: '#64748b',
           isAI: true,
           isTraffic: true,
           data: trafficData,
           pos: new THREE.Vector3(),
-          tangent: new THREE.Vector3()
-        });
+          tangent: new THREE.Vector3(),
+          steeringAngle: 0,
+          pitchAngle: 0,
+          rollAngle: 0
+        };
+        this.updateCarSplineTransform(tState);
+        this.trafficCars.push(tState);
       }
     }
 
@@ -546,7 +581,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       const copMesh = this.createPoliceCarMesh();
       this.scene.add(copMesh);
 
-      this.copCars.push({
+      const copState: CarState = {
         progress: 0.01,
         laneOffset: 0,
         speed: 0,
@@ -561,8 +596,13 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         isCop: true,
         data: copData,
         pos: new THREE.Vector3(),
-        tangent: new THREE.Vector3()
-      });
+        tangent: new THREE.Vector3(),
+        steeringAngle: 0,
+        pitchAngle: 0,
+        rollAngle: 0
+      };
+      this.updateCarSplineTransform(copState);
+      this.copCars.push(copState);
       this.audioEngine.startPoliceSiren();
       this.policeChatterText.set('Dispatch: Unit 12 in pursuit of speeder on sector 1!');
     }
@@ -592,58 +632,78 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     return [spot1, spot2];
   }
 
-  private createDetailedCarMesh(carData: CarData, colorHex?: string): THREE.Group {
+  private createDetailedCarMesh(carData: CarData, colorHex?: string): { group: THREE.Group; bodyMesh: THREE.Mesh; brakeLightMat: THREE.MeshStandardMaterial } {
     const group = new THREE.Group();
     const primaryColor = colorHex || carData.primaryColor;
 
-    const bodyGeo = new THREE.BoxGeometry(1.8, 0.55, 3.4);
+    // Streamlined Metallic Chassis Body
+    const bodyGeo = new THREE.BoxGeometry(1.85, 0.55, 3.5);
     const bodyMat = new THREE.MeshStandardMaterial({
       color: primaryColor,
-      metalness: 0.8,
-      roughness: 0.2
+      metalness: 0.85,
+      roughness: 0.15
     });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.35;
+    body.position.y = 0.38;
     group.add(body);
 
-    const cabinGeo = new THREE.BoxGeometry(1.3, 0.45, 1.6);
-    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
+    // Glass Roof Cockpit
+    const cabinGeo = new THREE.BoxGeometry(1.35, 0.48, 1.7);
+    const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.05, metalness: 0.9 });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(0, 0.75, -0.2);
+    cabin.position.set(0, 0.78, -0.2);
     group.add(cabin);
 
-    const spoilerGeo = new THREE.BoxGeometry(1.7, 0.08, 0.3);
-    const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+    // Aerodynamic Rear Wing / Spoiler
+    const spoilerGeo = new THREE.BoxGeometry(1.8, 0.08, 0.35);
+    const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
     const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
-    spoiler.position.set(0, 0.8, -1.5);
+    spoiler.position.set(0, 0.82, -1.55);
     group.add(spoiler);
 
-    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.35, 16);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-    const positions = [[-0.9, 0.32, 1.1], [0.9, 0.32, 1.1], [-0.9, 0.32, -1.1], [0.9, 0.32, -1.1]];
+    // Brake Light Strip
+    const brakeLightGeo = new THREE.BoxGeometry(1.4, 0.12, 0.1);
+    const brakeLightMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, emissive: 0x000000 });
+    const brakeLight = new THREE.Mesh(brakeLightGeo, brakeLightMat);
+    brakeLight.position.set(0, 0.5, -1.76);
+    group.add(brakeLight);
+
+    // Chrome Alloy Wheels with Brake Discs
+    const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.38, 20);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+    const rimGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.39, 16);
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.9, roughness: 0.1 });
+
+    const positions = [[-0.92, 0.34, 1.15], [0.92, 0.34, 1.15], [-0.92, 0.34, -1.15], [0.92, 0.34, -1.15]];
     positions.forEach(pos => {
       const wheel = new THREE.Mesh(wheelGeo, wheelMat);
       wheel.rotation.z = Math.PI / 2;
       wheel.position.set(pos[0], pos[1], pos[2]);
+
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.rotation.z = Math.PI / 2;
+      wheel.add(rim);
+
       group.add(wheel);
     });
 
-    return group;
+    return { group, bodyMesh: body, brakeLightMat };
   }
 
   private createPoliceCarMesh(): THREE.Group {
-    const group = this.createDetailedCarMesh(this.carRoster[1], '#09090b');
+    const build = this.createDetailedCarMesh(this.carRoster[1], '#09090b');
+    const group = build.group;
 
-    const barGeo = new THREE.BoxGeometry(0.8, 0.15, 0.25);
+    const barGeo = new THREE.BoxGeometry(0.85, 0.18, 0.28);
     const barMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 2 });
     const bar = new THREE.Mesh(barGeo, barMat);
-    bar.position.set(0, 0.95, -0.2);
+    bar.position.set(0, 0.98, -0.2);
     group.add(bar);
 
     return group;
   }
 
-  // --- Physics, AI & Spline Motion ---
+  // --- Physics, AI & Body Motion ---
   private startRaceLoop() {
     const loop = () => {
       this.animFrameId = requestAnimationFrame(loop);
@@ -681,14 +741,30 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
         if (accelInput) {
           car.speed = Math.min(car.maxSpeed, car.speed + car.accel);
+          car.pitchAngle = THREE.MathUtils.lerp(car.pitchAngle, -0.05, 0.1);
+          if (car.brakeLightMat) car.brakeLightMat.emissive.setHex(0x000000);
         } else if (brakeInput) {
           car.speed = Math.max(-car.maxSpeed * 0.4, car.speed - car.accel * 1.5);
+          car.pitchAngle = THREE.MathUtils.lerp(car.pitchAngle, 0.08, 0.1);
+          if (car.brakeLightMat) car.brakeLightMat.emissive.setHex(0xef4444);
         } else {
           car.speed *= 0.985;
+          car.pitchAngle = THREE.MathUtils.lerp(car.pitchAngle, 0, 0.1);
+          if (car.brakeLightMat) car.brakeLightMat.emissive.setHex(0x000000);
         }
 
-        if (leftInput) car.laneOffset = Math.max(-5.0, car.laneOffset - car.steer);
-        if (rightInput) car.laneOffset = Math.min(5.0, car.laneOffset + car.steer);
+        if (leftInput) {
+          car.laneOffset = Math.max(-5.0, car.laneOffset - car.steer);
+          car.rollAngle = THREE.MathUtils.lerp(car.rollAngle, 0.08, 0.1);
+          car.steeringAngle = THREE.MathUtils.lerp(car.steeringAngle, 0.35, 0.1);
+        } else if (rightInput) {
+          car.laneOffset = Math.min(5.0, car.laneOffset + car.steer);
+          car.rollAngle = THREE.MathUtils.lerp(car.rollAngle, -0.08, 0.1);
+          car.steeringAngle = THREE.MathUtils.lerp(car.steeringAngle, -0.35, 0.1);
+        } else {
+          car.rollAngle = THREE.MathUtils.lerp(car.rollAngle, 0, 0.1);
+          car.steeringAngle = THREE.MathUtils.lerp(car.steeringAngle, 0, 0.1);
+        }
 
         const oldGear = car.gear;
         car.gear = Math.min(6, Math.max(1, Math.floor(Math.abs(car.speed) / (car.maxSpeed / 5)) + 1));
@@ -761,7 +837,9 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     car.mesh.position.y += 0.2;
 
     const angle = Math.atan2(car.tangent.x, car.tangent.z);
-    car.mesh.rotation.y = angle;
+    car.mesh.rotation.y = angle + car.steeringAngle * 0.15;
+    car.mesh.rotation.x = car.pitchAngle;
+    car.mesh.rotation.z = car.rollAngle;
   }
 
   private handleRaceFinish(winningCar: CarState, pIdx: number) {
