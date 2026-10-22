@@ -11,7 +11,19 @@ export class ChessEnvironmentBuilder {
     const lightTexture = TextureGenerator.createMarbleTexture(false);
     const darkTexture = TextureGenerator.createMarbleTexture(true);
 
-    const tileGeo = new THREE.BoxGeometry(1, 0.2, 1);
+    // Inner board base plate (gives thin gold grid lines in tiny tile gaps)
+    const boardBaseGeo = new THREE.BoxGeometry(8.05, 0.18, 8.05);
+    const boardBaseMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706, // Gold inlay accent grid
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const boardBase = new THREE.Mesh(boardBaseGeo, boardBaseMat);
+    boardBase.position.set(0, -0.11, 0);
+    boardGroup.add(boardBase);
+
+    // Tiles geometry - slightly smaller than 1.0 (0.98) to show gold grid lines between squares
+    const tileGeo = new THREE.BoxGeometry(0.97, 0.2, 0.97);
 
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
@@ -20,46 +32,41 @@ export class ChessEnvironmentBuilder {
 
         if (theme === 'battlefield') {
           mat = new THREE.MeshStandardMaterial({
-            color: isDark ? 0x27272a : 0x71717a,
+            color: isDark ? 0x18181b : 0xa1a1aa,
             roughness: 0.8,
             metalness: 0.2
           });
         } else if (theme === 'arcane') {
           mat = new THREE.MeshStandardMaterial({
-            color: isDark ? 0x1e1b4b : 0x312e81,
+            color: isDark ? 0x0f172a : 0x4338ca,
             roughness: 0.3,
             metalness: 0.6,
-            emissive: isDark ? 0x0f172a : 0x1e1b4b
+            emissive: isDark ? 0x020617 : 0x1e1b4b
           });
         } else if (theme === 'classic') {
           const woodTex = TextureGenerator.createWoodTexture(isDark);
           mat = new THREE.MeshStandardMaterial({
             map: woodTex,
+            color: isDark ? 0x451a03 : 0xfde047,
             roughness: 0.4
           });
         } else {
-          // Marble default
+          // Marble default (White Marble vs Black Onyx)
           mat = new THREE.MeshStandardMaterial({
             map: isDark ? darkTexture : lightTexture,
+            color: isDark ? 0x111827 : 0xffffff,
             roughness: 0.15,
             metalness: 0.1
           });
         }
 
         const tile = new THREE.Mesh(tileGeo, mat);
-        tile.position.set(c - 3.5, -0.1, r - 3.5);
+        tile.position.set(c - 3.5, -0.09, r - 3.5);
         tile.receiveShadow = true;
         tile.userData = { row: r, col: c };
 
         tiles.push(tile);
         boardGroup.add(tile);
-
-        // Gold Inlay Border around each square
-        const borderGeo = new THREE.BoxGeometry(1.02, 0.21, 1.02);
-        const borderMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
-        const border = new THREE.Mesh(borderGeo, borderMat);
-        border.position.set(c - 3.5, -0.105, r - 3.5);
-        boardGroup.add(border);
       }
     }
 
