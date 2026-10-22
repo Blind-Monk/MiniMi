@@ -58,6 +58,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   activeView = signal<'main-menu' | 'showcase' | 'race-setup' | 'racing' | 'tournament-standings' | 'cheat-modal'>('main-menu');
   selectedCarIndex = signal<number>(0);
   selectedTrackIndex = signal<number>(0);
+  selectedClassFilter = signal<string>('All Classes');
   gameMode = signal<'single' | 'head-to-head' | 'timetrial' | 'tournament'>('single');
   timeOfDay = signal<'Morning' | 'Midday' | 'Evening'>('Midday');
   trafficEnabled = signal<boolean>(true);
@@ -67,6 +68,12 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   raceWinner = signal<string | null>(null);
   showKeyModal = signal<boolean>(false);
   showcaseInterior = signal<boolean>(false);
+  showIntroModal = signal<boolean>(false);
+
+  // In-Race HUD Telemetry Signals
+  countdownText = signal<string>('');
+  radarDistance = signal<number>(0);
+  policeChatterText = signal<string>('');
 
   // Tournament State
   tournamentPoints = signal<{ [carId: string]: number }>({});
@@ -110,17 +117,40 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private dirLight!: THREE.DirectionalLight;
   private ambLight!: THREE.AmbientLight;
 
-  // Track Curve points
   private currentTrackCurve?: THREE.CatmullRomCurve3;
 
   ngAfterViewInit() {
     this.asphaltTexture = TextureGenerator.createAsphaltTexture();
     this.grassTexture = TextureGenerator.createGrassTexture();
+    this.audioEngine.startMusic();
+  }
+
+  filteredCarRoster(): CarData[] {
+    const filter = this.selectedClassFilter();
+    if (filter === 'All Classes') return this.carRoster;
+    return this.carRoster.filter(c => c.class === filter);
+  }
+
+  selectCarByData(car: CarData) {
+    const idx = this.carRoster.findIndex(c => c.id === car.id);
+    if (idx !== -1) {
+      this.selectCar(idx);
+    }
   }
 
   // --- View Navigation & Sound ---
   playClick() {
     this.audioEngine.playMenuClick();
+  }
+
+  playIntroCinematic() {
+    this.playClick();
+    this.showIntroModal.set(true);
+  }
+
+  closeIntroModal() {
+    this.playClick();
+    this.showIntroModal.set(false);
   }
 
   toggleMute() {
@@ -166,12 +196,16 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       const warrior = this.carRoster.find(c => c.id === 'warrior');
       if (warrior) warrior.isUnlocked = true;
       this.cheatMessage.set('⚡ CHEAT ACTIVATED: Warrior Jet-Car Unlocked!');
+    } else if (code === 'FZR2000' || code === 'FZR') {
+      const fzr = this.carRoster.find(c => c.id === 'fzr2000');
+      if (fzr) fzr.isUnlocked = true;
+      this.cheatMessage.set('⚡ CHEAT ACTIVATED: FZR 2000 Secret Car Unlocked!');
     } else if (code === 'LOSTVEGAS' || code === 'VEGAS') {
       const vegas = this.trackRoster.find(t => t.id === 'lost-vegas');
       if (vegas) vegas.isUnlocked = true;
       this.cheatMessage.set('🎰 CHEAT ACTIVATED: Lost Vegas Track Unlocked!');
     } else {
-      this.cheatMessage.set('❌ Invalid Cheat Code. Try WARRIOR or LOSTVEGAS.');
+      this.cheatMessage.set('❌ Invalid Cheat Code. Try WARRIOR, FZR2000, or LOSTVEGAS.');
     }
     this.playClick();
   }
@@ -203,6 +237,14 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.cameraMode.set(mode);
   }
 
+  testEngineSound() {
+    this.audioEngine.startEngineSound();
+    this.audioEngine.updateEngineRPM(0.9, 4);
+    setTimeout(() => {
+      this.audioEngine.stopEngineSound();
+    }, 1500);
+  }
+
   // --- 3D Showcase Section ---
   private initShowcase3D() {
     if (!this.showcaseCanvasRef) return;
@@ -217,7 +259,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.showcaseRenderer.setSize(width, height);
     this.showcaseRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Showcase Lighting Stage
     const amb = new THREE.AmbientLight(0xffffff, 0.9);
     this.showcaseScene.add(amb);
 
@@ -277,17 +318,31 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.activeView.set('racing');
     setTimeout(() => {
       this.initRaceWorld();
-      this.audioEngine.startEngineSound();
-      this.startRaceLoop();
+      this.runRaceCountdownSequence();
     }, 50);
+  }
+
+  private runRaceCountdownSequence() {
+    const steps = ['3', '2', '1', 'GO!'];
+    let idx = 0;
+    const timer = setInterval(() => {
+      if (idx < steps.length) {
+        this.countdownText.set(steps[idx]);
+        this.audioEngine.playCountdownTone(idx === steps.length - 1);
+        idx++;
+      } else {
+        this.countdownText.set('');
+        clearInterval(timer);
+        this.audioEngine.startEngineSound();
+        this.startRaceLoop();
+      }
+    }, 800);
   }
 
   restartRace() {
     this.playClick();
     this.raceWinner.set(null);
-    if (this.audioEngine) {
-      this.audioEngine.startEngineSound();
-    }
+    this.runRaceCountdownSequence();
     this.resetCarsToStart();
   }
 
@@ -296,6 +351,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     cancelAnimationFrame(this.animFrameId);
     this.audioEngine.stopEngineSound();
     this.audioEngine.stopPoliceSiren();
+    this.audioEngine.startMusic();
     this.activeView.set('main-menu');
   }
 
@@ -330,7 +386,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setScissorTest(true);
 
-    // Dynamic Lighting
     this.ambLight = new THREE.AmbientLight(0xffffff, track.ambientLight);
     this.scene.add(this.ambLight);
 
@@ -338,22 +393,17 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.dirLight.position.set(...track.sunPosition);
     this.scene.add(this.dirLight);
 
-    // Build 3D Track Geometry & Environment
     this.build3DTrackEnvironment(track);
-
-    // Initialize Cars
     this.initCarsAndTraffic(track);
   }
 
   private build3DTrackEnvironment(track: TrackData) {
-    // Generate CatmullRom Curve from control points
     const curvePoints = track.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
     const isClosed = track.type === 'Circuit';
     this.currentTrackCurve = new THREE.CatmullRomCurve3(curvePoints, isClosed);
 
     const points = this.currentTrackCurve.getPoints(200);
 
-    // Create Road Geometry via Extrusion
     const shape = new THREE.Shape();
     shape.moveTo(-6, 0);
     shape.lineTo(6, 0);
@@ -366,7 +416,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const roadMesh = new THREE.Mesh(roadGeo, roadMat);
     this.scene.add(roadMesh);
 
-    // Ground Plane
     const groundGeo = new THREE.PlaneGeometry(800, 800);
     const groundMat = new THREE.MeshStandardMaterial({ color: track.groundColor, map: this.grassTexture, roughness: 0.9 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -374,7 +423,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     ground.position.y = -0.3;
     this.scene.add(ground);
 
-    // Environment Props based on track scenery
     this.addSceneryProps(track, points);
   }
 
@@ -385,7 +433,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       const norm = this.currentTrackCurve?.getTangentAt(idx / pathPoints.length) || new THREE.Vector3(1, 0, 0);
       const perp = new THREE.Vector3(-norm.z, 0, norm.x).normalize();
 
-      // Streetlights or Trees on track sides
       if (track.scenery === 'city' || track.scenery === 'industrial' || track.scenery === 'vegas') {
         const buildingMat = new THREE.MeshStandardMaterial({
           color: track.scenery === 'vegas' ? (idx % 2 === 0 ? 0xf43f5e : 0x06b6d4) : 0x334155,
@@ -403,11 +450,11 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         rightB.position.copy(pt).addScaledVector(perp, -25);
         rightB.position.y += height / 2;
         this.scene.add(rightB);
-      } else if (track.scenery === 'coastal' || track.scenery === 'forest' || track.scenery === 'alpine') {
+      } else if (track.scenery === 'coastal' || track.scenery === 'forest' || track.scenery === 'alpine' || track.scenery === 'mystic') {
         const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3);
         const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
         const leavesGeo = new THREE.ConeGeometry(2, 5, 8);
-        const leavesMat = new THREE.MeshStandardMaterial({ color: track.scenery === 'alpine' ? 0xe0f2fe : 0x15803d });
+        const leavesMat = new THREE.MeshStandardMaterial({ color: track.scenery === 'alpine' || track.scenery === 'mystic' ? 0xe0f2fe : 0x15803d });
 
         const treeGroup = new THREE.Group();
         const trunk = new THREE.Mesh(trunkGeo, trunkMat);
@@ -432,7 +479,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const pCount = this.playerCount();
     const selectedCar = this.carRoster[this.selectedCarIndex()];
 
-    // Player & AI Cars
     const totalRacers = this.gameMode() === 'head-to-head' ? 2 : (this.gameMode() === 'timetrial' ? pCount : 8);
 
     for (let i = 0; i < totalRacers; i++) {
@@ -469,7 +515,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       });
     }
 
-    // Spawn Traffic
     if (this.trafficEnabled() && track.hasTrafficByDefault) {
       for (let i = 0; i < 6; i++) {
         const trafficData = this.carRoster[3];
@@ -496,9 +541,8 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       }
     }
 
-    // Spawn Police Pursuer
     if (this.copPursuitEnabled() && track.hasPoliceByDefault) {
-      const copData = this.carRoster[1]; // Mustang / Police Pursuit
+      const copData = this.carRoster[1];
       const copMesh = this.createPoliceCarMesh();
       this.scene.add(copMesh);
 
@@ -521,6 +565,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         data: copData
       });
       this.audioEngine.startPoliceSiren();
+      this.policeChatterText.set('Dispatch: Unit 12 in pursuit of speeder on sector 1!');
     }
   }
 
@@ -556,7 +601,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const group = new THREE.Group();
     const primaryColor = colorHex || carData.primaryColor;
 
-    // Body Chassis
     const bodyGeo = new THREE.BoxGeometry(1.8, 0.55, 3.4);
     const bodyMat = new THREE.MeshStandardMaterial({
       color: primaryColor,
@@ -567,21 +611,18 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     body.position.y = 0.35;
     group.add(body);
 
-    // Glass Roof Cabin
     const cabinGeo = new THREE.BoxGeometry(1.3, 0.45, 1.6);
     const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
     cabin.position.set(0, 0.75, -0.2);
     group.add(cabin);
 
-    // Spoiler Rear Wing
     const spoilerGeo = new THREE.BoxGeometry(1.7, 0.08, 0.3);
     const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
     const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
     spoiler.position.set(0, 0.8, -1.5);
     group.add(spoiler);
 
-    // Wheels
     const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.35, 16);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
     const positions = [[-0.9, 0.32, 1.1], [0.9, 0.32, 1.1], [-0.9, 0.32, -1.1], [0.9, 0.32, -1.1]];
@@ -598,7 +639,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private createPoliceCarMesh(): THREE.Group {
     const group = this.createDetailedCarMesh(this.carRoster[1], '#09090b');
 
-    // Flashing Siren Bar
     const barGeo = new THREE.BoxGeometry(0.8, 0.15, 0.25);
     const barMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 2 });
     const bar = new THREE.Mesh(barGeo, barMat);
@@ -619,11 +659,10 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateRacePhysics() {
-    if (this.raceWinner()) return;
+    if (this.raceWinner() || this.countdownText()) return;
 
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
 
-    // Player Control Logic
     this.cars.forEach((car, idx) => {
       if (!car.isAI && idx < this.playerCount()) {
         const cfg = this.playerConfigs[idx];
@@ -656,27 +695,26 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         if (leftInput) car.angle += car.steer * (car.speed >= 0 ? 1 : -1);
         if (rightInput) car.angle -= car.steer * (car.speed >= 0 ? 1 : -1);
 
-        // Calculate Gear
+        const oldGear = car.gear;
         car.gear = Math.min(6, Math.max(1, Math.floor(Math.abs(car.speed) / (car.maxSpeed / 5)) + 1));
+        if (car.gear !== oldGear && idx === 0) {
+          this.audioEngine.playGearShift();
+        }
 
-        // Audio update for Player 0
         if (idx === 0) {
           this.audioEngine.updateEngineRPM(car.speed / car.maxSpeed, car.gear);
         }
       } else {
-        // AI Racers
         car.speed = car.maxSpeed * 0.88;
         car.z += car.speed * 2;
       }
 
-      // Position update
       car.x += Math.sin(car.angle) * car.speed;
       car.z += Math.cos(car.angle) * car.speed;
 
       car.mesh.position.set(car.x, car.y, car.z);
       car.mesh.rotation.y = car.angle;
 
-      // Lap and Checkpoint Progression
       if (car.z > car.checkpoint * 100 + 50) {
         car.checkpoint++;
         if (car.checkpoint >= 3) {
@@ -689,13 +727,11 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       }
     });
 
-    // Traffic Cars Motion
     this.trafficCars.forEach(tCar => {
       tCar.z += tCar.speed * 1.5;
       tCar.mesh.position.set(tCar.x, tCar.y, tCar.z);
     });
 
-    // Police Squad Pursuit AI
     if (this.copCars.length > 0 && this.cars[0]) {
       const pCar = this.cars[0];
       this.copCars.forEach(cop => {
@@ -703,12 +739,13 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         const dz = pCar.z - cop.z;
         const dist = Math.hypot(dx, dz);
 
+        this.radarDistance.set(Math.round(dist * 10));
+
         if (dist > 1.5) {
           cop.x += (dx / dist) * 0.3;
           cop.z += (dz / dist) * 0.3 + 0.2;
           cop.angle = Math.atan2(dx, dz);
         } else {
-          // Siren sound collision with player
           this.audioEngine.playCollision();
         }
 
@@ -730,7 +767,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       this.tournamentPoints.set(pts);
 
       if (this.tournamentRound() >= 3) {
-        // Unlock Lost Vegas Track and Warrior Car!
         const vegas = this.trackRoster.find(t => t.id === 'lost-vegas');
         if (vegas) vegas.isUnlocked = true;
         const warrior = this.carRoster.find(c => c.id === 'warrior');
@@ -788,7 +824,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         cam.position.set(car.x, car.y + 0.9, car.z + 1.2);
         cam.lookAt(car.x, car.y + 0.9, car.z + 20);
       } else if (mode === 'dashboard') {
-        // 3D Dashboard Cockpit View
         cam.position.set(car.x - 0.3, car.y + 0.75, car.z - 0.2);
         cam.lookAt(car.x, car.y + 0.75, car.z + 15);
       }
@@ -833,5 +868,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     if (this.showcaseRenderer) this.showcaseRenderer.dispose();
     this.audioEngine.stopEngineSound();
     this.audioEngine.stopPoliceSiren();
+    this.audioEngine.stopMusic();
   }
 }

@@ -17,10 +17,21 @@
       </div>
     </div>
 
-    <!-- Header Actions -->
+    <!-- Header Controls & Audio Spectrum -->
     <div class="flex items-center gap-2">
+      <!-- Animated Spectrum Bar Simulation -->
+      <div class="hidden sm:flex items-end gap-0.5 h-6 px-2 bg-slate-950 border border-slate-800 rounded-lg">
+        <div class="w-1 bg-amber-500 animate-pulse h-3"></div>
+        <div class="w-1 bg-red-500 animate-pulse h-5"></div>
+        <div class="w-1 bg-rose-500 animate-pulse h-2"></div>
+        <div class="w-1 bg-teal-500 animate-pulse h-4"></div>
+      </div>
+
       <button (click)="toggleMute()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-700 text-xs font-bold transition">
-        {{ isMuted() ? '🔇 Muted' : '🔊 Sound FX On' }}
+        {{ isMuted() ? '🔇 Muted' : '🎵 Synth Music On' }}
+      </button>
+      <button (click)="playIntroCinematic()" class="px-3 py-1.5 bg-amber-950 hover:bg-amber-900 text-amber-300 rounded-lg border border-amber-700 text-xs font-bold transition">
+        🎬 FMV Intro
       </button>
       <button (click)="openCheatModal()" class="px-3 py-1.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 rounded-lg border border-indigo-700 text-xs font-bold transition">
         🔑 Cheat Code
@@ -48,35 +59,35 @@
         </div>
 
         <div class="space-y-2">
-          <button (click)="openRaceSetup('single')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-amber-950 hover:to-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition">
+          <button (click)="openRaceSetup('single')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-amber-950 hover:to-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
             <span class="flex items-center gap-2 group-hover:text-amber-400">
               <span class="text-lg">🏁</span> Single Race Mode
             </span>
             <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Full 8 Grid &gt;</span>
           </button>
 
-          <button (click)="openRaceSetup('head-to-head')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-rose-950 hover:to-slate-900 border border-slate-800 hover:border-rose-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition">
+          <button (click)="openRaceSetup('head-to-head')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-rose-950 hover:to-slate-900 border border-slate-800 hover:border-rose-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
             <span class="flex items-center gap-2 group-hover:text-rose-400">
               <span class="text-lg">🚓</span> Head-to-Head Pursuit
             </span>
             <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Traffic & Cops &gt;</span>
           </button>
 
-          <button (click)="openRaceSetup('timetrial')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-teal-950 hover:to-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition">
+          <button (click)="openRaceSetup('timetrial')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-teal-950 hover:to-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
             <span class="flex items-center gap-2 group-hover:text-teal-400">
               <span class="text-lg">⏱️</span> Time Trial Sprint
             </span>
             <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Solo Record &gt;</span>
           </button>
 
-          <button (click)="openRaceSetup('tournament')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-yellow-950 hover:to-slate-900 border border-slate-800 hover:border-yellow-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition">
+          <button (click)="openRaceSetup('tournament')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-yellow-950 hover:to-slate-900 border border-slate-800 hover:border-yellow-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
             <span class="flex items-center gap-2 group-hover:text-amber-400">
               <span class="text-lg">🏆</span> Tournament Championship
             </span>
             <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Unlock Bonus &gt;</span>
           </button>
 
-          <button (click)="openShowcase()" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-indigo-950 hover:to-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition">
+          <button (click)="openShowcase()" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-indigo-950 hover:to-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
             <span class="flex items-center gap-2 group-hover:text-indigo-400">
               <span class="text-lg">🚘</span> Vehicle Showcase Stage
             </span>
@@ -86,7 +97,7 @@
       </div>
 
       <!-- Right Active Vehicle Preview Card -->
-      <div class="md:col-span-7 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+      <div class="md:col-span-7 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-xl">
         <div>
           <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
             <div>
@@ -102,23 +113,35 @@
             "{{ carRoster[selectedCarIndex()].specsNarrative }}"
           </p>
 
-          <!-- Vehicle Metrics -->
+          <!-- Vehicle Metrics & Visual Gauge Bars -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
               <span class="text-slate-500 block text-[10px]">POWER</span>
               <span class="font-bold text-amber-400">{{ carRoster[selectedCarIndex()].horsepower }} HP</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-amber-500" [style.width.%]="(carRoster[selectedCarIndex()].horsepower / 500) * 100"></div>
+              </div>
             </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
               <span class="text-slate-500 block text-[10px]">0–60 MPH</span>
               <span class="font-bold text-teal-400">{{ carRoster[selectedCarIndex()].accel060 }}s</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-teal-400" [style.width.%]="100 - (carRoster[selectedCarIndex()].accel060 / 6) * 100"></div>
+              </div>
             </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
-              <span class="text-slate-500 block text-[10px]">ENGINE</span>
-              <span class="font-bold text-slate-200 truncate block">{{ carRoster[selectedCarIndex()].engine }}</span>
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
+              <span class="text-slate-500 block text-[10px]">TOP SPEED</span>
+              <span class="font-bold text-rose-400">{{ carRoster[selectedCarIndex()].topSpeedKmH }} KM/H</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-rose-500" [style.width.%]="(carRoster[selectedCarIndex()].topSpeedKmH / 350) * 100"></div>
+              </div>
             </div>
-            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
               <span class="text-slate-500 block text-[10px]">HANDLING</span>
-              <span class="font-bold text-rose-400">{{ carRoster[selectedCarIndex()].handlingScore }}/10</span>
+              <span class="font-bold text-indigo-400">{{ carRoster[selectedCarIndex()].handlingScore }}/10</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500" [style.width.%]="carRoster[selectedCarIndex()].handlingScore * 10"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -148,14 +171,27 @@
         </button>
       </div>
 
+      <!-- Class Filter Tabs -->
+      <div class="flex flex-wrap gap-2">
+        @for (cls of ['All Classes', 'Class A (Exotics)', 'Class B (Muscle & GT)', 'Class C (Sports)', 'Bonus / Secret']; track cls) {
+          <button
+            (click)="selectedClassFilter.set(cls)"
+            [class.bg-amber-500]="selectedClassFilter() === cls"
+            [class.text-slate-950]="selectedClassFilter() === cls"
+            class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold transition">
+            {{ cls }}
+          </button>
+        }
+      </div>
+
       <!-- Car Selection Selector Row -->
       <div class="flex overflow-x-auto gap-2 pb-2">
-        @for (car of carRoster; track car.id; let idx = $index) {
+        @for (car of filteredCarRoster(); track car.id) {
           <button
-            (click)="selectCar(idx)"
+            (click)="selectCarByData(car)"
             [disabled]="car.isSecret && !car.isUnlocked"
-            [class.border-amber-500]="selectedCarIndex() === idx"
-            [class.bg-amber-500\/10]="selectedCarIndex() === idx"
+            [class.border-amber-500]="carRoster[selectedCarIndex()].id === car.id"
+            [class.bg-amber-500\/10]="carRoster[selectedCarIndex()].id === car.id"
             [class.opacity-40]="car.isSecret && !car.isUnlocked"
             class="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full" [style.backgroundColor]="car.primaryColor"></span>
@@ -174,9 +210,14 @@
           <canvas #showcaseCanvas class="w-full aspect-[16/10] block rounded-xl"></canvas>
           <div class="flex justify-between items-center mt-3 text-xs">
             <span class="text-slate-400 font-mono">360° Rotatable Model Stage</span>
-            <button (click)="toggleShowcaseInterior()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-lg border border-slate-700">
-              {{ showcaseInterior() ? '360° Exterior View' : 'Interior Cabin View' }}
-            </button>
+            <div class="flex gap-2">
+              <button (click)="testEngineSound()" class="px-3 py-1 bg-amber-500/20 text-amber-300 font-bold rounded-lg border border-amber-500/40">
+                🔊 Test Engine Rev
+              </button>
+              <button (click)="toggleShowcaseInterior()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-lg border border-slate-700">
+                {{ showcaseInterior() ? '360° Exterior View' : 'Interior Cabin View' }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -347,6 +388,30 @@
       <div #container class="relative w-full aspect-[16/9] max-h-[580px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl">
         <canvas #canvas class="w-full h-full block"></canvas>
 
+        <!-- Race Countdown Overlay (3.. 2.. 1.. GO!) -->
+        @if (countdownText()) {
+          <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-40">
+            <span class="text-8xl font-black text-amber-400 animate-ping tracking-widest drop-shadow-2xl">
+              {{ countdownText() }}
+            </span>
+          </div>
+        }
+
+        <!-- Radar Detector & Police Radio Chatter HUD Overlay -->
+        <div class="absolute top-3 right-3 flex flex-col gap-2 items-end">
+          @if (copPursuitEnabled()) {
+            <div class="bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-red-800/80 text-xs font-mono font-bold flex items-center gap-2 text-red-400 animate-pulse">
+              <span>🚨 RADAR DETECTOR:</span>
+              <span>{{ radarDistance() > 0 ? (radarDistance() + 'M NEARBY') : 'SEARCHING...' }}</span>
+            </div>
+          }
+          @if (policeChatterText()) {
+            <div class="bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[11px] font-mono text-amber-300 max-w-xs">
+              📻 {{ policeChatterText() }}
+            </div>
+          }
+        </div>
+
         <!-- Floating HUD Instrument Overlay -->
         <div class="absolute top-3 left-3 flex flex-col gap-2">
           @for (pIdx of [0]; track pIdx) {
@@ -381,7 +446,32 @@
     </div>
   }
 
-  <!-- VIEW 5: CHEAT CONSOLE MODAL -->
+  <!-- VIEW 5: CINEMATIC INTRO MODAL -->
+  @if (showIntroModal()) {
+    <div class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
+      <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-4xl shadow-2xl animate-bounce">
+        🏎️
+      </div>
+      <div class="space-y-2">
+        <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 tracking-wider">
+          THE NEED FOR SPEED: SPECIAL EDITION
+        </h2>
+        <p class="text-sm text-slate-300 font-mono">1996 ELECTRONIC ARTS & ROAD & TRACK CLASSIC RETRO EDITION</p>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg text-xs text-slate-300 space-y-3 font-mono">
+        <p>⚡ Direct 3D High-Tech Polygon Engine Enabled</p>
+        <p>🔊 Web Audio API Synthesizer ( Jeff van Dyck / Saki Kaskas Sound Tracks )</p>
+        <p>🏁 Road & Track Test Data & Real Exotic Car Dynamics</p>
+      </div>
+
+      <button (click)="closeIntroModal()" class="px-8 py-3 bg-gradient-to-r from-amber-500 to-red-600 text-slate-950 font-black rounded-xl shadow-xl hover:scale-105 transition-all">
+        ENTER MAIN MENU DASHBOARD 🏁
+      </button>
+    </div>
+  }
+
+  <!-- VIEW 6: CHEAT CONSOLE MODAL -->
   @if (activeView() === 'cheat-modal') {
     <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">

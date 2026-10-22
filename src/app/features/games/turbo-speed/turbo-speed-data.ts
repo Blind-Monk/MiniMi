@@ -26,7 +26,7 @@ export interface TrackData {
   id: string;
   name: string;
   type: 'Point-to-Point' | 'Circuit';
-  scenery: 'city' | 'coastal' | 'alpine' | 'desert' | 'forest' | 'canyon' | 'industrial' | 'vegas';
+  scenery: 'city' | 'coastal' | 'alpine' | 'desert' | 'forest' | 'canyon' | 'industrial' | 'vegas' | 'mystic' | 'outback';
   lengthKm: number;
   defaultTimeOfDay: 'Morning' | 'Midday' | 'Evening';
   hasTrafficByDefault: boolean;
@@ -45,10 +45,52 @@ export interface TrackData {
 }
 
 export const CAR_ROSTER: CarData[] = [
-  // CLASS A - EXOTICS
+  // CLASS A - EXOTICS (NFS II SE & NFS I SE)
+  {
+    id: 'mclaren-f1',
+    name: 'McLaren F1 (NFS II SE Flagship)',
+    class: 'Class A (Exotics)',
+    classKey: 'A',
+    topSpeedMph: 240,
+    accel060: 3.2,
+    horsepower: 627,
+    torque: '479 lb-ft @ 5600 rpm',
+    weightLbs: 2509,
+    engine: '6.1L BMW S70/2 Naturally Aspirated V12',
+    transmission: '6-Speed Manual Central Driver Seat',
+    primaryColor: '#f97316', // Papaya Orange
+    secondaryColor: '#09090b',
+    handlingScore: 9.9,
+    topSpeedKmH: 386,
+    accelRate: 0.038,
+    maxSteer: 0.052,
+    specsNarrative: 'The crown jewel supercar of Need for Speed II SE. Gold-lined engine bay, central driving position, and a top speed of 240 mph.',
+    historyNarrative: 'Designed by Gordon Murray, the McLaren F1 stood for over a decade as the world fastest production car and the ultimate dream car of NFS II SE.'
+  },
+  {
+    id: 'ferrari-f50',
+    name: 'Ferrari F50',
+    class: 'Class A (Exotics)',
+    classKey: 'A',
+    topSpeedMph: 202,
+    accel060: 3.7,
+    horsepower: 513,
+    torque: '347 lb-ft @ 6500 rpm',
+    weightLbs: 2712,
+    engine: '4.7L F1-Derived Naturally Aspirated V12',
+    transmission: '6-Speed Manual Gated Shifter',
+    primaryColor: '#dc2626', // Rosso Corsa
+    secondaryColor: '#0f172a',
+    handlingScore: 9.6,
+    topSpeedKmH: 325,
+    accelRate: 0.032,
+    maxSteer: 0.048,
+    specsNarrative: 'Built to celebrate Ferrari 50th anniversary, the F50 packs a formula 1 derived 4.7-liter V12 bolted directly to a carbon fiber chassis.',
+    historyNarrative: 'Unveiled in 1995, the F50 brought raw Formula 1 racing technology to public highways, immortalized in Need for Speed II.'
+  },
   {
     id: 'diablo',
-    name: 'Lamborghini Diablo VT',
+    name: 'Lamborghini Diablo VT / SV',
     class: 'Class A (Exotics)',
     classKey: 'A',
     topSpeedMph: 202,
@@ -60,7 +102,7 @@ export const CAR_ROSTER: CarData[] = [
     transmission: '5-Speed Manual All-Wheel Drive',
     primaryColor: '#eab308', // Yellow
     secondaryColor: '#1e293b',
-    handlingScore: 9,
+    handlingScore: 9.0,
     topSpeedKmH: 325,
     accelRate: 0.028,
     maxSteer: 0.042,
@@ -68,28 +110,49 @@ export const CAR_ROSTER: CarData[] = [
     historyNarrative: 'Designed by Marcello Gandini and refined by Chrysler design team, the Diablo succeeded the legendary Countach as Lamborghini flagship supercar in 1990.'
   },
   {
-    id: 'ferrari512',
-    name: 'Ferrari 512 TR',
+    id: 'ford-gt90',
+    name: 'Ford GT90 Concept',
     class: 'Class A (Exotics)',
     classKey: 'A',
-    topSpeedMph: 195,
-    accel060: 4.7,
-    horsepower: 428,
-    torque: '362 lb-ft @ 5500 rpm',
-    weightLbs: 3241,
-    engine: '4.9L Flat-12 (180° V12)',
-    transmission: '5-Speed Manual Gated Shifter',
-    primaryColor: '#dc2626', // Rosso Corsa Red
-    secondaryColor: '#0f172a',
-    handlingScore: 8.8,
-    topSpeedKmH: 314,
-    accelRate: 0.026,
+    topSpeedMph: 253,
+    accel060: 3.1,
+    horsepower: 720,
+    torque: '660 lb-ft @ 4000 rpm',
+    weightLbs: 3197,
+    engine: '6.0L Quad-Turbocharged V12',
+    transmission: '5-Speed Manual',
+    primaryColor: '#f8fafc', // Bright White
+    secondaryColor: '#2563eb', // Blue Accents
+    handlingScore: 9.2,
+    topSpeedKmH: 407,
+    accelRate: 0.040,
     maxSteer: 0.044,
-    specsNarrative: 'An evolution of the Testarossa, the 512 TR features a lower engine placement, improved chassis rigidity, and a high-revving 428 hp flat-12 engine.',
-    historyNarrative: 'Debuted in 1991, the 512 TR carried the iconic side strakes into the 1990s with improved ergonomics and blistering track performance.'
+    specsNarrative: 'The world mightiest concept car featured in NFS II SE, boasting a quad-turbo 720 HP V12 engine and ceramic exhaust heat shields.',
+    historyNarrative: 'Built in 1995 as a modern successor to the GT40, the GT90 debuted Ford New Edge design philosophy and supercar power.'
   },
 
   // CLASS B - MUSCLE & GT
+  {
+    id: 'jaguar-xj220',
+    name: 'Jaguar XJ220',
+    class: 'Class B (Muscle & GT)',
+    classKey: 'B',
+    topSpeedMph: 217,
+    accel060: 3.6,
+    horsepower: 542,
+    torque: '475 lb-ft @ 4500 rpm',
+    weightLbs: 3241,
+    engine: '3.5L Twin-Turbocharged V6',
+    transmission: '5-Speed Manual Rear-Wheel Drive',
+    primaryColor: '#0d9488', // British Racing Teal
+    secondaryColor: '#ffffff',
+    handlingScore: 8.8,
+    topSpeedKmH: 349,
+    accelRate: 0.030,
+    maxSteer: 0.043,
+    specsNarrative: 'A sleek aluminum supercar capable of 217 mph, powered by a twin-turbocharged group B race-derived V6 engine.',
+    historyNarrative: 'Held the Nürburgring production car lap record for 8 years and starred in Need for Speed II SE.'
+  },
   {
     id: 'porsche911',
     name: 'Porsche 911 Carrera (993)',
@@ -102,7 +165,7 @@ export const CAR_ROSTER: CarData[] = [
     weightLbs: 3020,
     engine: '3.6L Air-Cooled Flat-6',
     transmission: '6-Speed Manual Rear-Wheel Drive',
-    primaryColor: '#e0e7ff', // Silver/White
+    primaryColor: '#e0e7ff',
     secondaryColor: '#1e1b4b',
     handlingScore: 9.5,
     topSpeedKmH: 270,
@@ -123,7 +186,7 @@ export const CAR_ROSTER: CarData[] = [
     weightLbs: 3465,
     engine: '5.7L LT5 DOHC 32V V8',
     transmission: '6-Speed Manual',
-    primaryColor: '#2563eb', // Imperial Blue
+    primaryColor: '#2563eb',
     secondaryColor: '#f8fafc',
     handlingScore: 8.2,
     topSpeedKmH: 288,
@@ -132,32 +195,32 @@ export const CAR_ROSTER: CarData[] = [
     specsNarrative: 'Nicknamed "King of the Hill", the ZR-1 features an aluminum 32-valve DOHC LT5 V8 co-developed with Lotus, capable of sustained high-speed endurance.',
     historyNarrative: 'The C4 ZR-1 shattered world endurance records in 1990, driving over 4,200 miles at an average speed above 175 mph.'
   },
-  {
-    id: 'viper',
-    name: 'Dodge Viper RT/10',
-    class: 'Class B (Muscle & GT)',
-    classKey: 'B',
-    topSpeedMph: 165,
-    accel060: 4.5,
-    horsepower: 400,
-    torque: '465 lb-ft @ 3600 rpm',
-    weightLbs: 3290,
-    engine: '8.0L Odd-Firing V10',
-    transmission: '6-Speed Heavy Duty Manual',
-    primaryColor: '#16a34a', // Emerald Green
-    secondaryColor: '#ffffff',
-    handlingScore: 8.0,
-    topSpeedKmH: 266,
-    accelRate: 0.025,
-    maxSteer: 0.040,
-    specsNarrative: 'A raw, uncompromising roadster powered by a massive 8.0-liter V10 engine delivering immense low-end torque with no electronic driver aids.',
-    historyNarrative: 'Inspired by the Shelby Cobra, Dodge released the Viper RT/10 in 1992 as a brutal homage to pure American mechanical muscle.'
-  },
 
   // CLASS C - SPORTS
   {
+    id: 'lotus-esprit',
+    name: 'Lotus Esprit V8',
+    class: 'Class C (Sports)',
+    classKey: 'C',
+    topSpeedMph: 175,
+    accel060: 4.4,
+    horsepower: 350,
+    torque: '295 lb-ft @ 4250 rpm',
+    weightLbs: 3042,
+    engine: '3.5L Twin-Turbocharged V8',
+    transmission: '5-Speed Manual Mid-Engine',
+    primaryColor: '#16a34a', // Lotus Green
+    secondaryColor: '#eab308',
+    handlingScore: 9.7,
+    topSpeedKmH: 282,
+    accelRate: 0.026,
+    maxSteer: 0.051,
+    specsNarrative: 'Lightweight fiberglass wedge body shell paired with Lotus custom twin-turbo V8 engine for telepathic track agility.',
+    historyNarrative: 'A fan favorite in Need for Speed II, combining British handling precision with twin-turbo V8 muscle.'
+  },
+  {
     id: 'nsx',
-    name: 'Acura NSX',
+    name: 'Acura / Honda NSX',
     class: 'Class C (Sports)',
     classKey: 'C',
     topSpeedMph: 168,
@@ -167,7 +230,7 @@ export const CAR_ROSTER: CarData[] = [
     weightLbs: 3010,
     engine: '3.0L VTEC DOHC V6',
     transmission: '5-Speed Manual Mid-Engine',
-    primaryColor: '#ef4444', // Championship Red
+    primaryColor: '#ef4444',
     secondaryColor: '#000000',
     handlingScore: 9.8,
     topSpeedKmH: 270,
@@ -176,50 +239,31 @@ export const CAR_ROSTER: CarData[] = [
     specsNarrative: 'Built with an all-aluminum monocoque chassis and tuned with input from F1 legend Ayrton Senna, the NSX redefined supercar daily usability.',
     historyNarrative: 'Honda launched the NSX in 1990 to prove that world-class mid-engine performance could be combined with rock-solid Japanese reliability.'
   },
-  {
-    id: 'supra',
-    name: 'Toyota Supra Turbo (A80)',
-    class: 'Class C (Sports)',
-    classKey: 'C',
-    topSpeedMph: 155,
-    accel060: 4.9,
-    horsepower: 320,
-    torque: '315 lb-ft @ 4000 rpm',
-    weightLbs: 3450,
-    engine: '3.0L Sequential Twin-Turbo 2JZ-GTE Inline-6',
-    transmission: '6-Speed Getrag Manual',
-    primaryColor: '#9333ea', // Deep Purple / Black
-    secondaryColor: '#e2e8f0',
-    handlingScore: 8.6,
-    topSpeedKmH: 250,
-    accelRate: 0.022,
-    maxSteer: 0.045,
-    specsNarrative: 'Powered by the iconic 2JZ-GTE sequential twin-turbo engine, the A80 Supra features active front spoilers and legendary tuning potential.',
-    historyNarrative: 'Released in 1993, the fourth-generation Supra became a tuner icon and Japanese sports car benchmark.'
-  },
-  {
-    id: 'rx7',
-    name: 'Mazda RX-7 Twin-Turbo (FD3S)',
-    class: 'Class C (Sports)',
-    classKey: 'C',
-    topSpeedMph: 156,
-    accel060: 5.1,
-    horsepower: 255,
-    torque: '217 lb-ft @ 5000 rpm',
-    weightLbs: 2800,
-    engine: '1.3L 13B-REW Sequential Twin-Turbo Rotary',
-    transmission: '5-Speed Manual',
-    primaryColor: '#f97316', // Competition Orange
-    secondaryColor: '#1e293b',
-    handlingScore: 9.7,
-    topSpeedKmH: 251,
-    accelRate: 0.021,
-    maxSteer: 0.052,
-    specsNarrative: 'Featuring a lightweight rotary engine placed far behind the front axle, the FD RX-7 achieves a perfect 50:50 weight distribution.',
-    historyNarrative: 'The FD generation RX-7 won multiple Car of the Year awards upon its 1992 launch for its organic styling and telepathic handling response.'
-  },
 
   // BONUS / SECRET
+  {
+    id: 'fzr2000',
+    name: 'FZR 2000 (NFS II SE Secret)',
+    class: 'Bonus / Secret',
+    classKey: 'Bonus',
+    topSpeedMph: 250,
+    accel060: 2.2,
+    horsepower: 1000,
+    torque: '850 lb-ft @ 8000 rpm',
+    weightLbs: 2200,
+    engine: 'Quad-Rotor Turbo Hybrid',
+    transmission: 'Single-Speed Direct Drive',
+    primaryColor: '#8b5cf6', // Electric Purple
+    secondaryColor: '#f43f5e',
+    handlingScore: 10,
+    topSpeedKmH: 402,
+    accelRate: 0.042,
+    maxSteer: 0.056,
+    isSecret: true,
+    isUnlocked: false,
+    specsNarrative: 'The iconic secret bonus vehicle in Need for Speed II SE, boasting extreme top speed and razor-sharp grip.',
+    historyNarrative: 'Unlocked via tournament victory or the secret cheat code "FZR2000" in Need for Speed II Special Edition.'
+  },
   {
     id: 'warrior',
     name: 'Warrior Jet-Car (NFS SE Special)',
@@ -232,8 +276,8 @@ export const CAR_ROSTER: CarData[] = [
     weightLbs: 2100,
     engine: 'Twin-Turbine Jet Hybrid',
     transmission: 'Single-Speed Direct Drive',
-    primaryColor: '#06b6d4', // Neon Cyan
-    secondaryColor: '#f43f5e', // Hot Pink
+    primaryColor: '#06b6d4',
+    secondaryColor: '#f43f5e',
     handlingScore: 10,
     topSpeedKmH: 420,
     accelRate: 0.045,
@@ -267,7 +311,7 @@ export const TRACK_ROSTER: TrackData[] = [
   },
   {
     id: 'coastal',
-    name: 'Coastal Highway',
+    name: 'Coastal Highway / Pacific Spirit',
     type: 'Point-to-Point',
     scenery: 'coastal',
     lengthKm: 15.8,
@@ -284,35 +328,36 @@ export const TRACK_ROSTER: TrackData[] = [
     points: createCoastalPath()
   },
   {
-    id: 'alpine',
-    name: 'Alpine Run',
-    type: 'Point-to-Point',
-    scenery: 'alpine',
-    lengthKm: 16.5,
-    defaultTimeOfDay: 'Midday',
-    hasTrafficByDefault: true,
-    hasPoliceByDefault: true,
-    description: 'Snow-capped mountain pass with winding steep ascents, icy road turns, timber bridges, and dramatic drop-offs.',
-    skyColor: 0x93c5fd,
+    id: 'mystic-peaks',
+    name: 'Mystic Peaks (NFS II SE)',
+    type: 'Circuit',
+    scenery: 'mystic',
+    lengthKm: 7.8,
+    defaultTimeOfDay: 'Evening',
+    isExclusiveSE: true,
+    hasTrafficByDefault: false,
+    hasPoliceByDefault: false,
+    description: 'Icy snow-capped mountain circuit from NFS II SE featuring high-speed icy turns and mountain avalanches.',
+    skyColor: 0x38bdf8,
     fogColor: 0xe0f2fe,
-    groundColor: 0x3a5a40,
+    groundColor: 0xf1f5f9,
     roadColor: 0x475569,
     ambientLight: 0.85,
-    sunPosition: [50, 120, 30],
+    sunPosition: [40, 100, 20],
     points: createAlpinePath()
   },
 
   // CIRCUIT TRACKS
   {
-    id: 'rusty-springs',
-    name: 'Rusty Springs',
+    id: 'proving-grounds',
+    name: 'Proving Grounds (NFS II SE Oval)',
     type: 'Circuit',
     scenery: 'desert',
     lengthKm: 3.8,
     defaultTimeOfDay: 'Midday',
     hasTrafficByDefault: false,
     hasPoliceByDefault: false,
-    description: 'High-speed desert oval circuit surrounded by red rock canyons, cacti, and dusty desert flats.',
+    description: 'High-speed banked test track oval designed for maximum top speed trials in NFS II SE.',
     skyColor: 0xfde047,
     fogColor: 0xfef08a,
     groundColor: 0xb45309,
@@ -323,7 +368,7 @@ export const TRACK_ROSTER: TrackData[] = [
   },
   {
     id: 'autumn-valley',
-    name: 'Autumn Valley',
+    name: 'Autumn Valley / North Country',
     type: 'Circuit',
     scenery: 'forest',
     lengthKm: 5.2,
@@ -340,26 +385,8 @@ export const TRACK_ROSTER: TrackData[] = [
     points: createFigure8Path(100, 60)
   },
   {
-    id: 'vertigo-ridge',
-    name: 'Vertigo Ridge',
-    type: 'Circuit',
-    scenery: 'canyon',
-    lengthKm: 6.4,
-    defaultTimeOfDay: 'Evening',
-    hasTrafficByDefault: false,
-    hasPoliceByDefault: false,
-    description: 'Mountainous terrain with dramatic elevation changes, hairpin mountain turns, and sunset canyon vistas.',
-    skyColor: 0xf43f5e,
-    fogColor: 0xfbe2e8,
-    groundColor: 0x881337,
-    roadColor: 0x1c1917,
-    ambientLight: 0.7,
-    sunPosition: [-100, 40, -80],
-    points: createMountainCircuitPath()
-  },
-  {
     id: 'transtropolis',
-    name: 'Transtropolis (SE Exclusive)',
+    name: 'Transtropolis / Monolithic Studios',
     type: 'Circuit',
     scenery: 'industrial',
     lengthKm: 7.1,
@@ -376,30 +403,11 @@ export const TRACK_ROSTER: TrackData[] = [
     sunPosition: [30, 60, 60],
     points: createIndustrialPath()
   },
-  {
-    id: 'burnt-sienna',
-    name: 'Burnt Sienna (SE Exclusive)',
-    type: 'Circuit',
-    scenery: 'desert',
-    lengthKm: 6.8,
-    defaultTimeOfDay: 'Midday',
-    isExclusiveSE: true,
-    hasTrafficByDefault: false,
-    hasPoliceByDefault: false,
-    description: 'NFS Special Edition exclusive canyon race featuring dirt segments, old mining structures, and dusty chicanes.',
-    skyColor: 0xf97316,
-    fogColor: 0xffedd5,
-    groundColor: 0x9a3412,
-    roadColor: 0x78350f,
-    ambientLight: 0.95,
-    sunPosition: [90, 110, -30],
-    points: createCanyonPath()
-  },
 
   // BONUS UNLOCKABLE TRACK
   {
     id: 'lost-vegas',
-    name: 'Lost Vegas (Secret Bonus Track)',
+    name: 'Lost Vegas / Last Resort (Secret Bonus)',
     type: 'Circuit',
     scenery: 'vegas',
     lengthKm: 8.5,
@@ -419,14 +427,13 @@ export const TRACK_ROSTER: TrackData[] = [
   }
 ];
 
-// Helper Functions to generate path control points for tracks
 function createCityPath(): { x: number; z: number; y: number }[] {
   const pts = [];
   for (let i = 0; i <= 60; i++) {
     const t = i / 60;
     const z = -200 + t * 400;
     const x = Math.sin(t * Math.PI * 4) * 40 + Math.cos(t * Math.PI * 2) * 20;
-    const y = (i > 20 && i < 35) ? -5 : 0; // tunnel segment
+    const y = (i > 20 && i < 35) ? -5 : 0;
     pts.push({ x, z, y });
   }
   return pts;
@@ -450,7 +457,7 @@ function createAlpinePath(): { x: number; z: number; y: number }[] {
     const t = i / 60;
     const z = -250 + t * 500;
     const x = Math.sin(t * Math.PI * 5) * 50;
-    const y = Math.sin(t * Math.PI) * 25; // mountain crest
+    const y = Math.sin(t * Math.PI) * 25;
     pts.push({ x, z, y });
   }
   return pts;
@@ -483,20 +490,6 @@ function createFigure8Path(rx: number, rz: number): { x: number; z: number; y: n
   return pts;
 }
 
-function createMountainCircuitPath(): { x: number; z: number; y: number }[] {
-  const pts = [];
-  const total = 50;
-  for (let i = 0; i < total; i++) {
-    const angle = (i / total) * Math.PI * 2;
-    const r = 80 + Math.sin(angle * 3) * 25;
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
-    const y = Math.sin(angle * 2) * 12;
-    pts.push({ x, z, y });
-  }
-  return pts;
-}
-
 function createIndustrialPath(): { x: number; z: number; y: number }[] {
   const pts = [];
   const grid = [
@@ -518,20 +511,6 @@ function createIndustrialPath(): { x: number; z: number; y: number }[] {
         y: 0
       });
     }
-  }
-  return pts;
-}
-
-function createCanyonPath(): { x: number; z: number; y: number }[] {
-  const pts = [];
-  const total = 50;
-  for (let i = 0; i < total; i++) {
-    const angle = (i / total) * Math.PI * 2;
-    const r = 90 + Math.cos(angle * 4) * 20;
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
-    const y = (i > 15 && i < 30) ? -4 : 0;
-    pts.push({ x, z, y });
   }
   return pts;
 }
