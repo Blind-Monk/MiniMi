@@ -215,5 +215,15 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     icon: '📄',
     tags: ['PDF', 'Compress', 'Convert', 'Edit', 'Sign', 'AI', 'Scanner', 'Popular'],
     isPopular: true
+  },
+  {
+    id: 'invoice-generator',
+    name: 'Invoice Generator',
+    category: 'tools',
+    subcategory: 'Documents / Business',
+    description: 'Create, customize, save, and print professional invoices. Everything stays on your device.',
+    icon: '🧾',
+    tags: ['Invoice', 'Bill', 'Business', 'PDF', 'Documents'],
+    isPopular: true
   }
 ];
