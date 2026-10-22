@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import { TextureGenerator } from '../../../core/utils/texture-generator';
+import { CAR_ROSTER, TRACK_ROSTER, CarData, TrackData } from './turbo-speed-data';
+import { TurboSpeedAudioEngine } from './turbo-speed-audio';
 
 interface PlayerConfig {
   id: number;
@@ -22,174 +24,279 @@ interface PlayerConfig {
 interface CarState {
   x: number;
   z: number;
+  y: number;
   angle: number;
   speed: number;
   maxSpeed: number;
   accel: number;
   steer: number;
+  gear: number;
   lap: number;
   checkpoint: number;
   mesh: THREE.Group;
   color: string;
   isAI: boolean;
+  isCop?: boolean;
+  isTraffic?: boolean;
+  headlights?: THREE.SpotLight[];
+  data: CarData;
 }
 
 @Component({
   selector: 'app-turbo-speed',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-6xl mx-auto space-y-4 shadow-2xl font-sans">
-
-      <!-- Top HUD Header -->
-      <div class="flex flex-wrap items-center justify-between bg-slate-900/90 p-3 rounded-xl border border-slate-800 gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-xl font-black shadow-lg">
-            🏎️
-          </div>
-          <div>
-            <h2 class="text-base font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-500">
-              TURBO SPEED II SE (RETRO 3D)
-            </h2>
-            <p class="text-xs text-slate-400">Split-screen 1–4 Player • Joystick & Custom Keys Supported</p>
-          </div>
-        </div>
-
-        <!-- Player Count Switcher -->
-        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs font-bold">
-          <span class="text-slate-400 px-1">Players:</span>
-          @for (count of [1, 2, 3, 4]; track count) {
-            <button
-              (click)="setPlayerCount(count)"
-              [class.bg-red-600]="playerCount() === count"
-              class="px-3 py-1 rounded-lg transition-all">
-              {{ count }}P
-            </button>
-          }
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button (click)="toggleKeyConfigModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 text-xs font-bold">
-            ⚙️ Keybindings
-          </button>
-          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs font-bold">
-            ⛶ Fullscreen
-          </button>
-          <button (click)="restartRace()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold shadow">
-            🏁 Restart Race
-          </button>
-        </div>
-      </div>
-
-      <!-- 3D Racing Viewport Canvas Container -->
-      <div #container class="relative w-full aspect-[16/9] max-h-[600px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl">
-        <canvas #canvas class="w-full h-full block"></canvas>
-
-        <!-- Floating HUD Overlay -->
-        <div class="absolute top-3 left-3 flex gap-2">
-          @for (pIdx of getActivePlayerIndices(); track pIdx) {
-            <div class="bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-bold flex items-center gap-2">
-              <span [style.color]="playerConfigs[pIdx].color">PLAYER {{ pIdx + 1 }}</span>
-              <span class="text-amber-400 font-mono">P{{ getPosition(pIdx) }}</span>
-              <span class="text-teal-400 font-mono">LAP {{ cars[pIdx]?.lap || 1 }}/3</span>
-              <span class="text-red-400 font-mono">{{ getDisplaySpeed(pIdx) }} KM/H</span>
-            </div>
-          }
-        </div>
-
-        <!-- Winner Overlay -->
-        @if (raceWinner()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-center z-30">
-            <span class="text-6xl animate-bounce">🏆</span>
-            <h2 class="text-4xl font-black text-amber-400 tracking-wider">{{ raceWinner() }} WINS THE RACE!</h2>
-            <button (click)="restartRace()" class="px-8 py-3 bg-gradient-to-r from-red-600 to-amber-500 text-slate-950 font-black rounded-xl shadow-xl hover:scale-105 transition-all">
-              PLAY AGAIN
-            </button>
-          </div>
-        }
-      </div>
-
-      <!-- Keybindings Config Modal -->
-      @if (showKeyModal()) {
-        <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 class="text-lg font-bold text-amber-400">⚙️ Configure Player Keybindings & Joysticks</h3>
-              <button (click)="toggleKeyConfigModal()" class="text-slate-400 hover:text-white font-bold text-xl">✕</button>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              @for (cfg of playerConfigs; track cfg.id) {
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                  <div class="flex items-center justify-between font-bold" [style.color]="cfg.color">
-                    <span>PLAYER {{ cfg.id + 1 }}</span>
-                    <label class="flex items-center gap-1 cursor-pointer text-slate-300 font-normal">
-                      <input type="checkbox" [(ngModel)]="cfg.useGamepad" class="rounded bg-slate-800 border-slate-700 text-red-500">
-                      Gamepad
-                    </label>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-2 text-slate-300">
-                    <div>Accelerate: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.up }}</span></div>
-                    <div>Brake/Rev: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.down }}</span></div>
-                    <div>Steer Left: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.left }}</span></div>
-                    <div>Steer Right: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.right }}</span></div>
-                  </div>
-                </div>
-              }
-            </div>
-
-            <div class="text-right pt-2 border-t border-slate-800">
-              <button (click)="toggleKeyConfigModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-lg text-xs">
-                Save & Close
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-  `
+  templateUrl: './turbo-speed.component.html',
+  styleUrl: './turbo-speed.component.css'
 })
 export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('showcaseCanvas') showcaseCanvasRef?: ElementRef<HTMLCanvasElement>;
 
+  // Game UI State Signals
+  activeView = signal<'main-menu' | 'showcase' | 'race-setup' | 'racing' | 'tournament-standings' | 'cheat-modal'>('main-menu');
+  selectedCarIndex = signal<number>(0);
+  selectedTrackIndex = signal<number>(0);
+  gameMode = signal<'single' | 'head-to-head' | 'timetrial' | 'tournament'>('single');
+  timeOfDay = signal<'Morning' | 'Midday' | 'Evening'>('Midday');
+  trafficEnabled = signal<boolean>(true);
+  copPursuitEnabled = signal<boolean>(true);
+  cameraMode = signal<'chase' | 'close' | 'hood' | 'dashboard'>('chase');
   playerCount = signal<number>(1);
   raceWinner = signal<string | null>(null);
   showKeyModal = signal<boolean>(false);
+  showcaseInterior = signal<boolean>(false);
+
+  // Tournament State
+  tournamentPoints = signal<{ [carId: string]: number }>({});
+  tournamentRound = signal<number>(1);
+
+  // Cheat State
+  cheatInput = signal<string>('');
+  cheatMessage = signal<string>('');
+
+  // Audio Engine
+  audioEngine = new TurboSpeedAudioEngine();
+  isMuted = signal<boolean>(false);
+
+  // Roster lists
+  carRoster = CAR_ROSTER;
+  trackRoster = TRACK_ROSTER;
 
   playerConfigs: PlayerConfig[] = [
-    { id: 0, name: 'P1 Red Viper', color: '#ef4444', active: true, useGamepad: false, gamepadIndex: 0, keys: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' } },
-    { id: 1, name: 'P2 Blue Stealth', color: '#3b82f6', active: false, useGamepad: false, gamepadIndex: 1, keys: { up: 'w', down: 's', left: 'a', right: 'd' } },
-    { id: 2, name: 'P3 Yellow Comet', color: '#eab308', active: false, useGamepad: false, gamepadIndex: 2, keys: { up: 'i', down: 'k', left: 'j', right: 'l' } },
-    { id: 3, name: 'P4 Green Beast', color: '#22c55e', active: false, useGamepad: false, gamepadIndex: 3, keys: { up: '8', down: '5', left: '4', right: '6' } }
+    { id: 0, name: 'P1 Racer', color: '#ef4444', active: true, useGamepad: false, gamepadIndex: 0, keys: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' } },
+    { id: 1, name: 'P2 Racer', color: '#3b82f6', active: false, useGamepad: false, gamepadIndex: 1, keys: { up: 'w', down: 's', left: 'a', right: 'd' } },
+    { id: 2, name: 'P3 Racer', color: '#eab308', active: false, useGamepad: false, gamepadIndex: 2, keys: { up: 'i', down: 'k', left: 'j', right: 'l' } },
+    { id: 3, name: 'P4 Racer', color: '#22c55e', active: false, useGamepad: false, gamepadIndex: 3, keys: { up: '8', down: '5', left: '4', right: '6' } }
   ];
 
   cars: CarState[] = [];
+  trafficCars: CarState[] = [];
+  copCars: CarState[] = [];
+
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private animFrameId: number = 0;
   private activeKeys = new Set<string>();
 
+  private showcaseScene?: THREE.Scene;
+  private showcaseRenderer?: THREE.WebGLRenderer;
+  private showcaseMesh?: THREE.Group;
+  private showcaseAnimId: number = 0;
+
   private asphaltTexture!: THREE.CanvasTexture;
   private grassTexture!: THREE.CanvasTexture;
+  private dirLight!: THREE.DirectionalLight;
+  private ambLight!: THREE.AmbientLight;
+
+  // Track Curve points
+  private currentTrackCurve?: THREE.CatmullRomCurve3;
 
   ngAfterViewInit() {
     this.asphaltTexture = TextureGenerator.createAsphaltTexture();
     this.grassTexture = TextureGenerator.createGrassTexture();
+  }
 
-    this.initRaceWorld();
-    this.startRaceLoop();
+  // --- View Navigation & Sound ---
+  playClick() {
+    this.audioEngine.playMenuClick();
+  }
+
+  toggleMute() {
+    const muted = this.audioEngine.toggleMute();
+    this.isMuted.set(muted);
+  }
+
+  openShowcase() {
+    this.playClick();
+    this.activeView.set('showcase');
+    setTimeout(() => this.initShowcase3D(), 50);
+  }
+
+  closeShowcase() {
+    this.playClick();
+    cancelAnimationFrame(this.showcaseAnimId);
+    this.activeView.set('main-menu');
+  }
+
+  openRaceSetup(mode: 'single' | 'head-to-head' | 'timetrial' | 'tournament') {
+    this.playClick();
+    this.gameMode.set(mode);
+    if (mode === 'tournament') {
+      this.initTournament();
+    }
+    this.activeView.set('race-setup');
+  }
+
+  openCheatModal() {
+    this.playClick();
+    this.cheatMessage.set('');
+    this.activeView.set('cheat-modal');
+  }
+
+  closeCheatModal() {
+    this.playClick();
+    this.activeView.set('main-menu');
+  }
+
+  applyCheat() {
+    const code = this.cheatInput().trim().toUpperCase();
+    if (code === 'WARRIOR' || code === 'NFSWARRIOR') {
+      const warrior = this.carRoster.find(c => c.id === 'warrior');
+      if (warrior) warrior.isUnlocked = true;
+      this.cheatMessage.set('⚡ CHEAT ACTIVATED: Warrior Jet-Car Unlocked!');
+    } else if (code === 'LOSTVEGAS' || code === 'VEGAS') {
+      const vegas = this.trackRoster.find(t => t.id === 'lost-vegas');
+      if (vegas) vegas.isUnlocked = true;
+      this.cheatMessage.set('🎰 CHEAT ACTIVATED: Lost Vegas Track Unlocked!');
+    } else {
+      this.cheatMessage.set('❌ Invalid Cheat Code. Try WARRIOR or LOSTVEGAS.');
+    }
+    this.playClick();
+  }
+
+  selectCar(idx: number) {
+    if (this.carRoster[idx].isSecret && !this.carRoster[idx].isUnlocked) return;
+    this.playClick();
+    this.selectedCarIndex.set(idx);
+    if (this.activeView() === 'showcase') {
+      this.updateShowcaseCar();
+    }
+  }
+
+  selectTrack(idx: number) {
+    if (this.trackRoster[idx].isSecretBonus && !this.trackRoster[idx].isUnlocked) return;
+    this.playClick();
+    this.selectedTrackIndex.set(idx);
+    this.timeOfDay.set(this.trackRoster[idx].defaultTimeOfDay);
   }
 
   setPlayerCount(count: number) {
+    this.playClick();
     this.playerCount.set(count);
     this.playerConfigs.forEach((cfg, idx) => cfg.active = idx < count);
-    this.restartRace();
   }
 
-  getActivePlayerIndices(): number[] {
-    return Array.from({ length: this.playerCount() }, (_, i) => i);
+  setCameraMode(mode: 'chase' | 'close' | 'hood' | 'dashboard') {
+    this.playClick();
+    this.cameraMode.set(mode);
+  }
+
+  // --- 3D Showcase Section ---
+  private initShowcase3D() {
+    if (!this.showcaseCanvasRef) return;
+    const canvas = this.showcaseCanvasRef.nativeElement;
+    const width = canvas.clientWidth || 600;
+    const height = canvas.clientHeight || 350;
+
+    this.showcaseScene = new THREE.Scene();
+    this.showcaseScene.background = new THREE.Color(0x09090b);
+
+    this.showcaseRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.showcaseRenderer.setSize(width, height);
+    this.showcaseRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Showcase Lighting Stage
+    const amb = new THREE.AmbientLight(0xffffff, 0.9);
+    this.showcaseScene.add(amb);
+
+    const spot = new THREE.SpotLight(0xffedd5, 3);
+    spot.position.set(0, 15, 10);
+    this.showcaseScene.add(spot);
+
+    const stageGeo = new THREE.CylinderGeometry(5, 5, 0.2, 32);
+    const stageMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+    const stage = new THREE.Mesh(stageGeo, stageMat);
+    stage.position.y = -0.1;
+    this.showcaseScene.add(stage);
+
+    this.updateShowcaseCar();
+
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.set(0, 2.5, 7);
+    camera.lookAt(0, 0.8, 0);
+
+    const animateShowcase = () => {
+      this.showcaseAnimId = requestAnimationFrame(animateShowcase);
+      if (this.showcaseMesh && !this.showcaseInterior()) {
+        this.showcaseMesh.rotation.y += 0.008;
+      }
+      this.showcaseRenderer?.render(this.showcaseScene!, camera);
+    };
+    animateShowcase();
+  }
+
+  private updateShowcaseCar() {
+    if (!this.showcaseScene) return;
+    if (this.showcaseMesh) {
+      this.showcaseScene.remove(this.showcaseMesh);
+    }
+    const carData = this.carRoster[this.selectedCarIndex()];
+    this.showcaseMesh = this.createDetailedCarMesh(carData);
+    this.showcaseMesh.position.set(0, 0.1, 0);
+    this.showcaseScene.add(this.showcaseMesh);
+  }
+
+  toggleShowcaseInterior() {
+    this.playClick();
+    this.showcaseInterior.update(v => !v);
+  }
+
+  // --- Tournament Management ---
+  private initTournament() {
+    const pts: { [carId: string]: number } = {};
+    this.carRoster.forEach(c => pts[c.id] = 0);
+    this.tournamentPoints.set(pts);
+    this.tournamentRound.set(1);
+  }
+
+  startRace() {
+    this.playClick();
+    this.raceWinner.set(null);
+    this.activeView.set('racing');
+    setTimeout(() => {
+      this.initRaceWorld();
+      this.audioEngine.startEngineSound();
+      this.startRaceLoop();
+    }, 50);
+  }
+
+  restartRace() {
+    this.playClick();
+    this.raceWinner.set(null);
+    if (this.audioEngine) {
+      this.audioEngine.startEngineSound();
+    }
+    this.resetCarsToStart();
+  }
+
+  exitToMenu() {
+    this.playClick();
+    cancelAnimationFrame(this.animFrameId);
+    this.audioEngine.stopEngineSound();
+    this.audioEngine.stopPoliceSiren();
+    this.activeView.set('main-menu');
   }
 
   toggleKeyConfigModal() {
@@ -197,6 +304,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   toggleFullscreen() {
+    if (!this.containerRef) return;
     const elem = this.containerRef.nativeElement;
     if (!document.fullscreenElement) {
       elem.requestFullscreen().catch(err => console.error(err));
@@ -205,159 +313,278 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  restartRace() {
-    this.raceWinner.set(null);
-    this.cars.forEach((car, idx) => {
-      car.x = -10 - idx * 5;
-      car.z = 0;
-      car.angle = Math.PI / 2;
-      car.speed = 0;
-      car.lap = 1;
-      car.checkpoint = 0;
-      car.mesh.position.set(car.x, 0.2, car.z);
-      car.mesh.rotation.y = car.angle;
-    });
-  }
-
-  getPosition(pIdx: number): number {
-    if (!this.cars[pIdx]) return 1;
-    const pCar = this.cars[pIdx];
-    let pos = 1;
-    this.cars.forEach((other, idx) => {
-      if (idx !== pIdx) {
-        if (other.lap > pCar.lap || (other.lap === pCar.lap && other.checkpoint > pCar.checkpoint)) {
-          pos++;
-        }
-      }
-    });
-    return pos;
-  }
-
-  getDisplaySpeed(pIdx: number): number {
-    if (!this.cars[pIdx]) return 0;
-    return Math.round(Math.abs(this.cars[pIdx].speed) * 180);
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(e: KeyboardEvent) {
-    this.activeKeys.add(e.key);
-  }
-
-  @HostListener('window:keyup', ['$event'])
-  onKeyUp(e: KeyboardEvent) {
-    this.activeKeys.delete(e.key);
-  }
-
+  // --- 3D Track & Environment Rendering Engine ---
   private initRaceWorld() {
+    if (!this.canvasRef || !this.containerRef) return;
     const canvas = this.canvasRef.nativeElement;
     const container = this.containerRef.nativeElement;
 
+    const track = this.trackRoster[this.selectedTrackIndex()];
+
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0284c7);
-    this.scene.fog = new THREE.FogExp2(0x0284c7, 0.005);
+    this.scene.background = new THREE.Color(track.skyColor);
+    this.scene.fog = new THREE.FogExp2(track.fogColor, 0.003);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setScissorTest(true);
 
-    // Textured Grass Turf Ground
-    const grassGeo = new THREE.PlaneGeometry(500, 500);
-    const grassMat = new THREE.MeshStandardMaterial({
-      map: this.grassTexture,
-      roughness: 0.8
+    // Dynamic Lighting
+    this.ambLight = new THREE.AmbientLight(0xffffff, track.ambientLight);
+    this.scene.add(this.ambLight);
+
+    this.dirLight = new THREE.DirectionalLight(0xfffbeb, 1.4);
+    this.dirLight.position.set(...track.sunPosition);
+    this.scene.add(this.dirLight);
+
+    // Build 3D Track Geometry & Environment
+    this.build3DTrackEnvironment(track);
+
+    // Initialize Cars
+    this.initCarsAndTraffic(track);
+  }
+
+  private build3DTrackEnvironment(track: TrackData) {
+    // Generate CatmullRom Curve from control points
+    const curvePoints = track.points.map(p => new THREE.Vector3(p.x, p.y, p.z));
+    const isClosed = track.type === 'Circuit';
+    this.currentTrackCurve = new THREE.CatmullRomCurve3(curvePoints, isClosed);
+
+    const points = this.currentTrackCurve.getPoints(200);
+
+    // Create Road Geometry via Extrusion
+    const shape = new THREE.Shape();
+    shape.moveTo(-6, 0);
+    shape.lineTo(6, 0);
+    shape.lineTo(6, -0.2);
+    shape.lineTo(-6, -0.2);
+
+    const extrudeSettings = { steps: 200, extrudePath: this.currentTrackCurve, bevelEnabled: false };
+    const roadGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTexture, roughness: 0.5 });
+    const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+    this.scene.add(roadMesh);
+
+    // Ground Plane
+    const groundGeo = new THREE.PlaneGeometry(800, 800);
+    const groundMat = new THREE.MeshStandardMaterial({ color: track.groundColor, map: this.grassTexture, roughness: 0.9 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.3;
+    this.scene.add(ground);
+
+    // Environment Props based on track scenery
+    this.addSceneryProps(track, points);
+  }
+
+  private addSceneryProps(track: TrackData, pathPoints: THREE.Vector3[]) {
+    pathPoints.forEach((pt, idx) => {
+      if (idx % 6 !== 0) return;
+
+      const norm = this.currentTrackCurve?.getTangentAt(idx / pathPoints.length) || new THREE.Vector3(1, 0, 0);
+      const perp = new THREE.Vector3(-norm.z, 0, norm.x).normalize();
+
+      // Streetlights or Trees on track sides
+      if (track.scenery === 'city' || track.scenery === 'industrial' || track.scenery === 'vegas') {
+        const buildingMat = new THREE.MeshStandardMaterial({
+          color: track.scenery === 'vegas' ? (idx % 2 === 0 ? 0xf43f5e : 0x06b6d4) : 0x334155,
+          metalness: 0.5
+        });
+        const height = 15 + (idx % 5) * 10;
+        const bGeo = new THREE.BoxGeometry(10, height, 10);
+
+        const leftB = new THREE.Mesh(bGeo, buildingMat);
+        leftB.position.copy(pt).addScaledVector(perp, 25);
+        leftB.position.y += height / 2;
+        this.scene.add(leftB);
+
+        const rightB = new THREE.Mesh(bGeo, buildingMat);
+        rightB.position.copy(pt).addScaledVector(perp, -25);
+        rightB.position.y += height / 2;
+        this.scene.add(rightB);
+      } else if (track.scenery === 'coastal' || track.scenery === 'forest' || track.scenery === 'alpine') {
+        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 3);
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+        const leavesGeo = new THREE.ConeGeometry(2, 5, 8);
+        const leavesMat = new THREE.MeshStandardMaterial({ color: track.scenery === 'alpine' ? 0xe0f2fe : 0x15803d });
+
+        const treeGroup = new THREE.Group();
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.y = 1.5;
+        const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+        leaves.position.y = 4;
+        treeGroup.add(trunk, leaves);
+
+        const posLeft = pt.clone().addScaledVector(perp, 12 + Math.random() * 5);
+        treeGroup.position.copy(posLeft);
+        this.scene.add(treeGroup);
+      }
     });
-    const grass = new THREE.Mesh(grassGeo, grassMat);
-    grass.rotation.x = -Math.PI / 2;
-    this.scene.add(grass);
+  }
 
-    // Textured Asphalt Circuit
-    this.buildCircuitTrack();
+  // --- Cars, Traffic & Police Setup ---
+  private initCarsAndTraffic(track: TrackData) {
+    this.cars = [];
+    this.trafficCars = [];
+    this.copCars = [];
 
-    // Lighting
-    const amb = new THREE.AmbientLight(0xffffff, 0.8);
-    this.scene.add(amb);
+    const pCount = this.playerCount();
+    const selectedCar = this.carRoster[this.selectedCarIndex()];
 
-    const sun = new THREE.DirectionalLight(0xfffbeb, 1.4);
-    sun.position.set(50, 100, 50);
-    this.scene.add(sun);
+    // Player & AI Cars
+    const totalRacers = this.gameMode() === 'head-to-head' ? 2 : (this.gameMode() === 'timetrial' ? pCount : 8);
 
-    // Cars with Glossy Metallic PBR finish
-    const carColors = ['#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7', '#ec4899'];
-    for (let i = 0; i < 6; i++) {
-      const isAI = i >= this.playerCount();
-      const color = carColors[i];
-      const mesh = this.createCarMesh(color);
-      const x = -10 - i * 4;
-      const z = 0;
-      mesh.position.set(x, 0.2, z);
-      mesh.rotation.y = Math.PI / 2;
+    for (let i = 0; i < totalRacers; i++) {
+      const isPlayer = i < pCount;
+      const carData = isPlayer ? selectedCar : this.carRoster[i % this.carRoster.length];
+      const color = isPlayer ? this.playerConfigs[i].color : carData.primaryColor;
+
+      const mesh = this.createDetailedCarMesh(carData, color);
       this.scene.add(mesh);
 
+      const isNight = this.timeOfDay() === 'Evening';
+      let headlights: THREE.SpotLight[] | undefined;
+      if (isNight) {
+        headlights = this.addHeadlights(mesh);
+      }
+
       this.cars.push({
-        x, z,
-        angle: Math.PI / 2,
+        x: (i % 2 === 0 ? -2.5 : 2.5),
+        z: -10 - i * 8,
+        y: 0.2,
+        angle: 0,
         speed: 0,
-        maxSpeed: isAI ? 0.8 : 1.0,
-        accel: 0.02,
-        steer: 0.04,
+        maxSpeed: (carData.topSpeedKmH / 300) * 1.1,
+        accel: carData.accelRate,
+        steer: carData.maxSteer,
+        gear: 1,
         lap: 1,
         checkpoint: 0,
         mesh,
         color,
-        isAI
+        isAI: !isPlayer,
+        headlights,
+        data: carData
       });
+    }
+
+    // Spawn Traffic
+    if (this.trafficEnabled() && track.hasTrafficByDefault) {
+      for (let i = 0; i < 6; i++) {
+        const trafficData = this.carRoster[3];
+        const mesh = this.createDetailedCarMesh(trafficData, '#64748b');
+        this.scene.add(mesh);
+        this.trafficCars.push({
+          x: (i % 2 === 0 ? -3 : 3),
+          z: 50 + i * 40,
+          y: 0.2,
+          angle: 0,
+          speed: 0.4,
+          maxSpeed: 0.5,
+          accel: 0.01,
+          steer: 0,
+          gear: 1,
+          lap: 1,
+          checkpoint: 0,
+          mesh,
+          color: '#64748b',
+          isAI: true,
+          isTraffic: true,
+          data: trafficData
+        });
+      }
+    }
+
+    // Spawn Police Pursuer
+    if (this.copPursuitEnabled() && track.hasPoliceByDefault) {
+      const copData = this.carRoster[1]; // Mustang / Police Pursuit
+      const copMesh = this.createPoliceCarMesh();
+      this.scene.add(copMesh);
+
+      this.copCars.push({
+        x: 0,
+        z: -40,
+        y: 0.2,
+        angle: 0,
+        speed: 0,
+        maxSpeed: 1.2,
+        accel: 0.03,
+        steer: 0.045,
+        gear: 1,
+        lap: 1,
+        checkpoint: 0,
+        mesh: copMesh,
+        color: '#000000',
+        isAI: true,
+        isCop: true,
+        data: copData
+      });
+      this.audioEngine.startPoliceSiren();
     }
   }
 
-  private buildCircuitTrack() {
-    const trackCurve = new THREE.EllipseCurve(0, 0, 80, 50, 0, 2 * Math.PI, false, 0);
-    const points = trackCurve.getPoints(100);
-
-    const shape = new THREE.Shape();
-    points.forEach((p, idx) => {
-      if (idx === 0) shape.moveTo(p.x, p.y);
-      else shape.lineTo(p.x, p.y);
+  private resetCarsToStart() {
+    this.cars.forEach((car, i) => {
+      car.x = (i % 2 === 0 ? -2.5 : 2.5);
+      car.z = -10 - i * 8;
+      car.y = 0.2;
+      car.angle = 0;
+      car.speed = 0;
+      car.gear = 1;
+      car.lap = 1;
+      car.checkpoint = 0;
+      car.mesh.position.set(car.x, car.y, car.z);
+      car.mesh.rotation.y = car.angle;
     });
-
-    const extrudeSettings = { depth: 0.1, bevelEnabled: false };
-    const roadGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const roadMat = new THREE.MeshStandardMaterial({
-      map: this.asphaltTexture,
-      roughness: 0.4,
-      metalness: 0.1
-    });
-    const roadMesh = new THREE.Mesh(roadGeo, roadMat);
-    roadMesh.rotation.x = Math.PI / 2;
-    roadMesh.position.y = 0.05;
-    this.scene.add(roadMesh);
   }
 
-  private createCarMesh(colorHex: string): THREE.Group {
-    const group = new THREE.Group();
+  private addHeadlights(carMesh: THREE.Group): THREE.SpotLight[] {
+    const spot1 = new THREE.SpotLight(0xffedd5, 4, 30, Math.PI / 6);
+    spot1.position.set(-0.6, 0.4, 1.5);
+    spot1.target.position.set(-0.6, 0, 10);
 
-    // Glossy Metallic Paint Body Chassis
-    const bodyGeo = new THREE.BoxGeometry(1.6, 0.5, 3);
+    const spot2 = new THREE.SpotLight(0xffedd5, 4, 30, Math.PI / 6);
+    spot2.position.set(0.6, 0.4, 1.5);
+    spot2.target.position.set(0.6, 0, 10);
+
+    carMesh.add(spot1, spot1.target, spot2, spot2.target);
+    return [spot1, spot2];
+  }
+
+  private createDetailedCarMesh(carData: CarData, colorHex?: string): THREE.Group {
+    const group = new THREE.Group();
+    const primaryColor = colorHex || carData.primaryColor;
+
+    // Body Chassis
+    const bodyGeo = new THREE.BoxGeometry(1.8, 0.55, 3.4);
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: colorHex,
+      color: primaryColor,
       metalness: 0.8,
       roughness: 0.2
     });
     const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.3;
+    body.position.y = 0.35;
     group.add(body);
 
     // Glass Roof Cabin
-    const cabinGeo = new THREE.BoxGeometry(1.2, 0.4, 1.4);
+    const cabinGeo = new THREE.BoxGeometry(1.3, 0.45, 1.6);
     const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(0, 0.7, -0.2);
+    cabin.position.set(0, 0.75, -0.2);
     group.add(cabin);
 
-    // Rubber Wheels with Chrome Hubs
-    const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 12);
+    // Spoiler Rear Wing
+    const spoilerGeo = new THREE.BoxGeometry(1.7, 0.08, 0.3);
+    const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+    const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
+    spoiler.position.set(0, 0.8, -1.5);
+    group.add(spoiler);
+
+    // Wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.35, 16);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-    const positions = [[-0.8, 0.3, 1], [0.8, 0.3, 1], [-0.8, 0.3, -1], [0.8, 0.3, -1]];
+    const positions = [[-0.9, 0.32, 1.1], [0.9, 0.32, 1.1], [-0.9, 0.32, -1.1], [0.9, 0.32, -1.1]];
     positions.forEach(pos => {
       const wheel = new THREE.Mesh(wheelGeo, wheelMat);
       wheel.rotation.z = Math.PI / 2;
@@ -368,6 +595,20 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     return group;
   }
 
+  private createPoliceCarMesh(): THREE.Group {
+    const group = this.createDetailedCarMesh(this.carRoster[1], '#09090b');
+
+    // Flashing Siren Bar
+    const barGeo = new THREE.BoxGeometry(0.8, 0.15, 0.25);
+    const barMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 2 });
+    const bar = new THREE.Mesh(barGeo, barMat);
+    bar.position.set(0, 0.95, -0.2);
+    group.add(bar);
+
+    return group;
+  }
+
+  // --- Physics, AI & Game Loop ---
   private startRaceLoop() {
     const loop = () => {
       this.animFrameId = requestAnimationFrame(loop);
@@ -382,6 +623,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
 
+    // Player Control Logic
     this.cars.forEach((car, idx) => {
       if (!car.isAI && idx < this.playerCount()) {
         const cfg = this.playerConfigs[idx];
@@ -403,37 +645,107 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
           rightInput = this.activeKeys.has(cfg.keys.right);
         }
 
-        if (accelInput) car.speed = Math.min(car.maxSpeed, car.speed + car.accel);
-        else if (brakeInput) car.speed = Math.max(-car.maxSpeed * 0.4, car.speed - car.accel);
-        else car.speed *= 0.96;
+        if (accelInput) {
+          car.speed = Math.min(car.maxSpeed, car.speed + car.accel);
+        } else if (brakeInput) {
+          car.speed = Math.max(-car.maxSpeed * 0.4, car.speed - car.accel * 1.5);
+        } else {
+          car.speed *= 0.98;
+        }
 
         if (leftInput) car.angle += car.steer * (car.speed >= 0 ? 1 : -1);
         if (rightInput) car.angle -= car.steer * (car.speed >= 0 ? 1 : -1);
+
+        // Calculate Gear
+        car.gear = Math.min(6, Math.max(1, Math.floor(Math.abs(car.speed) / (car.maxSpeed / 5)) + 1));
+
+        // Audio update for Player 0
+        if (idx === 0) {
+          this.audioEngine.updateEngineRPM(car.speed / car.maxSpeed, car.gear);
+        }
       } else {
-        car.speed = car.maxSpeed * 0.9;
-        car.angle += 0.015;
+        // AI Racers
+        car.speed = car.maxSpeed * 0.88;
+        car.z += car.speed * 2;
       }
 
+      // Position update
       car.x += Math.sin(car.angle) * car.speed;
       car.z += Math.cos(car.angle) * car.speed;
 
-      car.mesh.position.set(car.x, 0.2, car.z);
+      car.mesh.position.set(car.x, car.y, car.z);
       car.mesh.rotation.y = car.angle;
 
-      const distFromCenter = Math.hypot(car.x, car.z);
-      if (distFromCenter > 40 && distFromCenter < 90) {
+      // Lap and Checkpoint Progression
+      if (car.z > car.checkpoint * 100 + 50) {
         car.checkpoint++;
-        if (car.checkpoint > 200) {
+        if (car.checkpoint >= 3) {
           car.lap++;
           car.checkpoint = 0;
           if (car.lap > 3 && !this.raceWinner()) {
-            this.raceWinner.set(car.isAI ? `AI Bot ${idx}` : `PLAYER ${idx + 1}`);
+            this.handleRaceFinish(car, idx);
           }
         }
       }
     });
+
+    // Traffic Cars Motion
+    this.trafficCars.forEach(tCar => {
+      tCar.z += tCar.speed * 1.5;
+      tCar.mesh.position.set(tCar.x, tCar.y, tCar.z);
+    });
+
+    // Police Squad Pursuit AI
+    if (this.copCars.length > 0 && this.cars[0]) {
+      const pCar = this.cars[0];
+      this.copCars.forEach(cop => {
+        const dx = pCar.x - cop.x;
+        const dz = pCar.z - cop.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 1.5) {
+          cop.x += (dx / dist) * 0.3;
+          cop.z += (dz / dist) * 0.3 + 0.2;
+          cop.angle = Math.atan2(dx, dz);
+        } else {
+          // Siren sound collision with player
+          this.audioEngine.playCollision();
+        }
+
+        cop.mesh.position.set(cop.x, cop.y, cop.z);
+        cop.mesh.rotation.y = cop.angle;
+      });
+    }
   }
 
+  private handleRaceFinish(winningCar: CarState, pIdx: number) {
+    const winnerName = winningCar.isAI ? `AI Driver (${winningCar.data.name})` : `PLAYER ${pIdx + 1}`;
+    this.raceWinner.set(winnerName);
+    this.audioEngine.stopEngineSound();
+    this.audioEngine.stopPoliceSiren();
+
+    if (this.gameMode() === 'tournament') {
+      const pts = { ...this.tournamentPoints() };
+      pts[winningCar.data.id] = (pts[winningCar.data.id] || 0) + 10;
+      this.tournamentPoints.set(pts);
+
+      if (this.tournamentRound() >= 3) {
+        // Unlock Lost Vegas Track and Warrior Car!
+        const vegas = this.trackRoster.find(t => t.id === 'lost-vegas');
+        if (vegas) vegas.isUnlocked = true;
+        const warrior = this.carRoster.find(c => c.id === 'warrior');
+        if (warrior) warrior.isUnlocked = true;
+      }
+    }
+  }
+
+  nextTournamentRound() {
+    this.tournamentRound.update(r => r + 1);
+    this.selectedTrackIndex.set((this.selectedTrackIndex() + 1) % this.trackRoster.length);
+    this.startRace();
+  }
+
+  // --- Rendering Viewports & 3D Dashboard Camera ---
   private renderSplitScreenViewports() {
     if (!this.renderer || !this.containerRef) return;
     const container = this.containerRef.nativeElement;
@@ -459,18 +771,67 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       this.renderer.setViewport(vx, vy, vw, vh);
       this.renderer.setScissor(vx, vy, vw, vh);
 
-      const cam = new THREE.PerspectiveCamera(60, vw / vh, 0.1, 300);
-      const camX = car.x - Math.sin(car.angle) * 8;
-      const camZ = car.z - Math.cos(car.angle) * 8;
-      cam.position.set(camX, 4, camZ);
-      cam.lookAt(car.x, 1, car.z);
+      const cam = new THREE.PerspectiveCamera(60, vw / vh, 0.1, 400);
+
+      const mode = this.cameraMode();
+      if (mode === 'chase') {
+        const camX = car.x - Math.sin(car.angle) * 8;
+        const camZ = car.z - Math.cos(car.angle) * 8;
+        cam.position.set(camX, car.y + 3.5, camZ);
+        cam.lookAt(car.x, car.y + 1, car.z + 5);
+      } else if (mode === 'close') {
+        const camX = car.x - Math.sin(car.angle) * 5;
+        const camZ = car.z - Math.cos(car.angle) * 5;
+        cam.position.set(camX, car.y + 2, camZ);
+        cam.lookAt(car.x, car.y + 0.8, car.z + 6);
+      } else if (mode === 'hood') {
+        cam.position.set(car.x, car.y + 0.9, car.z + 1.2);
+        cam.lookAt(car.x, car.y + 0.9, car.z + 20);
+      } else if (mode === 'dashboard') {
+        // 3D Dashboard Cockpit View
+        cam.position.set(car.x - 0.3, car.y + 0.75, car.z - 0.2);
+        cam.lookAt(car.x, car.y + 0.75, car.z + 15);
+      }
 
       this.renderer.render(this.scene, cam);
     }
   }
 
+  getDisplaySpeed(pIdx: number): number {
+    if (!this.cars[pIdx]) return 0;
+    return Math.round(Math.abs(this.cars[pIdx].speed) * 220);
+  }
+
+  getPosition(pIdx: number): number {
+    if (!this.cars[pIdx]) return 1;
+    const pCar = this.cars[pIdx];
+    let pos = 1;
+    this.cars.forEach((other, idx) => {
+      if (idx !== pIdx) {
+        if (other.lap > pCar.lap || (other.lap === pCar.lap && other.checkpoint > pCar.checkpoint)) {
+          pos++;
+        }
+      }
+    });
+    return pos;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(e: KeyboardEvent) {
+    this.activeKeys.add(e.key);
+  }
+
+  @HostListener('window:keyup', ['$event'])
+  onKeyUp(e: KeyboardEvent) {
+    this.activeKeys.delete(e.key);
+  }
+
   ngOnDestroy() {
     cancelAnimationFrame(this.animFrameId);
+    cancelAnimationFrame(this.showcaseAnimId);
     if (this.renderer) this.renderer.dispose();
+    if (this.showcaseRenderer) this.showcaseRenderer.dispose();
+    this.audioEngine.stopEngineSound();
+    this.audioEngine.stopPoliceSiren();
   }
 }
