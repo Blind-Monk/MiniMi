@@ -26,13 +26,15 @@ export class TurboSpeedAudioEngine {
   }
 
   // --- Dynamic Algorithmic 90s Retro Techno/Rock Synthesizer (100% Non-Copyright) ---
+  // High-energy 150 BPM synth track with arpeggiated lead, driving bassline, drum fills & filter sweeps
   startMusic() {
     this.init();
     if (!this.ctx || this.bgmPlaying || this.isMuted) return;
     this.bgmPlaying = true;
 
-    // Jeff van Dyck / Saki Kaskas NFS SE inspired synth beat sequence
-    const bassNotes = [110, 110, 130, 110, 146.83, 130, 110, 98]; // A2, A2, C3, A2, D3, C3, A2, G2
+    // Jeff van Dyck / Saki Kaskas Need for Speed SE inspired synth progression
+    const bassNotes = [110, 110, 130.81, 110, 146.83, 130.81, 110, 97.99]; // A2, A2, C3, A2, D3, C3, A2, G2
+    const leadNotes = [440, 523.25, 659.25, 587.33, 659.25, 783.99, 659.25, 523.25]; // A4, C5, E5, D5, E5, G5, E5, C5
     let step = 0;
 
     this.bgmIntervalId = window.setInterval(() => {
@@ -40,29 +42,54 @@ export class TurboSpeedAudioEngine {
       try {
         const now = this.ctx.currentTime;
 
-        // Bassline Synth
+        // 1. Driving Sawtooth Bassline with Resonant Lowpass Filter Sweep
         const bassOsc = this.ctx.createOscillator();
+        const bassFilter = this.ctx.createBiquadFilter();
         const bassGain = this.ctx.createGain();
-        bassOsc.type = 'sawtooth';
-        const note = bassNotes[step % bassNotes.length];
-        bassOsc.frequency.setValueAtTime(note, now);
 
-        bassGain.gain.setValueAtTime(0.06, now);
+        bassOsc.type = 'sawtooth';
+        const bassNote = bassNotes[step % bassNotes.length];
+        bassOsc.frequency.setValueAtTime(bassNote, now);
+
+        bassFilter.type = 'lowpass';
+        bassFilter.frequency.setValueAtTime(400 + Math.sin(step * 0.2) * 250, now);
+        bassFilter.Q.setValueAtTime(4, now);
+
+        bassGain.gain.setValueAtTime(0.08, now);
         bassGain.gain.exponentialRampToValueAtTime(0.005, now + 0.18);
 
-        bassOsc.connect(bassGain);
+        bassOsc.connect(bassFilter);
+        bassFilter.connect(bassGain);
         bassGain.connect(this.ctx.destination);
         bassOsc.start(now);
         bassOsc.stop(now + 0.2);
 
-        // Techno Kick / Drum pulse on beats 0, 2, 4, 6
+        // 2. High Octave 90s Techno Lead Synth Arpeggio
+        if (step % 2 === 0 || step % 3 === 0) {
+          const leadOsc = this.ctx.createOscillator();
+          const leadGain = this.ctx.createGain();
+
+          leadOsc.type = 'square';
+          const leadNote = leadNotes[(step * 3) % leadNotes.length];
+          leadOsc.frequency.setValueAtTime(leadNote, now);
+
+          leadGain.gain.setValueAtTime(0.035, now);
+          leadGain.gain.exponentialRampToValueAtTime(0.002, now + 0.14);
+
+          leadOsc.connect(leadGain);
+          leadGain.connect(this.ctx.destination);
+          leadOsc.start(now);
+          leadOsc.stop(now + 0.15);
+        }
+
+        // 3. Techno Kick Drum on beats 0, 2, 4, 6
         if (step % 2 === 0) {
           const kickOsc = this.ctx.createOscillator();
           const kickGain = this.ctx.createGain();
-          kickOsc.frequency.setValueAtTime(140, now);
-          kickOsc.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+          kickOsc.frequency.setValueAtTime(150, now);
+          kickOsc.frequency.exponentialRampToValueAtTime(32, now + 0.1);
 
-          kickGain.gain.setValueAtTime(0.15, now);
+          kickGain.gain.setValueAtTime(0.18, now);
           kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
           kickOsc.connect(kickGain);
@@ -71,12 +98,12 @@ export class TurboSpeedAudioEngine {
           kickOsc.stop(now + 0.1);
         }
 
-        // Hi-Hat / Snare noise on beats 1, 3, 5, 7
+        // 4. Crisp Hi-Hat / Snare Drum on off-beats
         if (step % 2 === 1) {
-          const hatBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
+          const hatBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.05), this.ctx.sampleRate);
           const data = hatBuffer.getChannelData(0);
           for (let i = 0; i < hatBuffer.length; i++) {
-            data[i] = (Math.random() * 2 - 1) * 0.03;
+            data[i] = (Math.random() * 2 - 1) * 0.04;
           }
           const hatSource = this.ctx.createBufferSource();
           hatSource.buffer = hatBuffer;
@@ -86,7 +113,7 @@ export class TurboSpeedAudioEngine {
 
         step++;
       } catch {}
-    }, 200); // 150 BPM Techno Beat
+    }, 180); // ~166 BPM Retro Euro-Techno Pace
   }
 
   stopMusic() {
@@ -242,7 +269,7 @@ export class TurboSpeedAudioEngine {
     this.init();
     if (!this.ctx || this.isMuted) return;
     try {
-      const bufferSize = this.ctx.sampleRate * 0.25;
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.25);
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {

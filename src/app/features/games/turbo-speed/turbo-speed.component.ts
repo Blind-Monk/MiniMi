@@ -22,17 +22,14 @@ interface PlayerConfig {
 }
 
 interface CarState {
-  x: number;
-  z: number;
-  y: number;
-  angle: number;
+  progress: number; // 0.0 to 1.0 along track curve
+  laneOffset: number; // -5.0 (left side) to +5.0 (right side)
   speed: number;
   maxSpeed: number;
   accel: number;
   steer: number;
   gear: number;
   lap: number;
-  checkpoint: number;
   mesh: THREE.Group;
   color: string;
   isAI: boolean;
@@ -40,6 +37,8 @@ interface CarState {
   isTraffic?: boolean;
   headlights?: THREE.SpotLight[];
   data: CarData;
+  pos: THREE.Vector3;
+  tangent: THREE.Vector3;
 }
 
 @Component({
@@ -117,7 +116,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private dirLight!: THREE.DirectionalLight;
   private ambLight!: THREE.AmbientLight;
 
-  private currentTrackCurve?: THREE.CatmullRomCurve3;
+  private currentTrackCurve!: THREE.CatmullRomCurve3;
 
   ngAfterViewInit() {
     this.asphaltTexture = TextureGenerator.createAsphaltTexture();
@@ -369,7 +368,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // --- 3D Track & Environment Rendering Engine ---
+  // --- Spline 3D Track & Environment Engine ---
   private initRaceWorld() {
     if (!this.canvasRef || !this.containerRef) return;
     const canvas = this.canvasRef.nativeElement;
@@ -379,7 +378,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(track.skyColor);
-    this.scene.fog = new THREE.FogExp2(track.fogColor, 0.003);
+    this.scene.fog = new THREE.FogExp2(track.fogColor, 0.002);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
@@ -416,7 +415,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const roadMesh = new THREE.Mesh(roadGeo, roadMat);
     this.scene.add(roadMesh);
 
-    const groundGeo = new THREE.PlaneGeometry(800, 800);
+    const groundGeo = new THREE.PlaneGeometry(1000, 1000);
     const groundMat = new THREE.MeshStandardMaterial({ color: track.groundColor, map: this.grassTexture, roughness: 0.9 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -430,7 +429,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     pathPoints.forEach((pt, idx) => {
       if (idx % 6 !== 0) return;
 
-      const norm = this.currentTrackCurve?.getTangentAt(idx / pathPoints.length) || new THREE.Vector3(1, 0, 0);
+      const norm = this.currentTrackCurve.getTangentAt(idx / pathPoints.length);
       const perp = new THREE.Vector3(-norm.z, 0, norm.x).normalize();
 
       if (track.scenery === 'city' || track.scenery === 'industrial' || track.scenery === 'vegas') {
@@ -470,7 +469,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  // --- Cars, Traffic & Police Setup ---
+  // --- Cars, Spline Progress & Traffic Physics ---
   private initCarsAndTraffic(track: TrackData) {
     this.cars = [];
     this.trafficCars = [];
@@ -495,48 +494,49 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         headlights = this.addHeadlights(mesh);
       }
 
+      const initialProgress = Math.max(0, 0.05 - (i * 0.008));
+      const laneOffset = (i % 2 === 0 ? -2.0 : 2.0);
+
       this.cars.push({
-        x: (i % 2 === 0 ? -2.5 : 2.5),
-        z: -10 - i * 8,
-        y: 0.2,
-        angle: 0,
+        progress: initialProgress,
+        laneOffset,
         speed: 0,
-        maxSpeed: (carData.topSpeedKmH / 300) * 1.1,
-        accel: carData.accelRate,
-        steer: carData.maxSteer,
+        maxSpeed: (carData.topSpeedKmH / 220) * 0.0018,
+        accel: carData.accelRate * 0.0001,
+        steer: carData.maxSteer * 2.5,
         gear: 1,
         lap: 1,
-        checkpoint: 0,
         mesh,
         color,
         isAI: !isPlayer,
         headlights,
-        data: carData
+        data: carData,
+        pos: new THREE.Vector3(),
+        tangent: new THREE.Vector3()
       });
     }
 
     if (this.trafficEnabled() && track.hasTrafficByDefault) {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 5; i++) {
         const trafficData = this.carRoster[3];
         const mesh = this.createDetailedCarMesh(trafficData, '#64748b');
         this.scene.add(mesh);
         this.trafficCars.push({
-          x: (i % 2 === 0 ? -3 : 3),
-          z: 50 + i * 40,
-          y: 0.2,
-          angle: 0,
-          speed: 0.4,
-          maxSpeed: 0.5,
-          accel: 0.01,
+          progress: 0.15 + i * 0.15,
+          laneOffset: (i % 2 === 0 ? -2.5 : 2.5),
+          speed: 0.0006,
+          maxSpeed: 0.0008,
+          accel: 0.00001,
           steer: 0,
           gear: 1,
           lap: 1,
-          checkpoint: 0,
           mesh,
           color: '#64748b',
           isAI: true,
           isTraffic: true,
-          data: trafficData
+          data: trafficData,
+          pos: new THREE.Vector3(),
+          tangent: new THREE.Vector3()
         });
       }
     }
@@ -547,22 +547,21 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       this.scene.add(copMesh);
 
       this.copCars.push({
-        x: 0,
-        z: -40,
-        y: 0.2,
-        angle: 0,
+        progress: 0.01,
+        laneOffset: 0,
         speed: 0,
-        maxSpeed: 1.2,
-        accel: 0.03,
-        steer: 0.045,
+        maxSpeed: 0.0022,
+        accel: 0.00012,
+        steer: 0.1,
         gear: 1,
         lap: 1,
-        checkpoint: 0,
         mesh: copMesh,
         color: '#000000',
         isAI: true,
         isCop: true,
-        data: copData
+        data: copData,
+        pos: new THREE.Vector3(),
+        tangent: new THREE.Vector3()
       });
       this.audioEngine.startPoliceSiren();
       this.policeChatterText.set('Dispatch: Unit 12 in pursuit of speeder on sector 1!');
@@ -571,16 +570,12 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   private resetCarsToStart() {
     this.cars.forEach((car, i) => {
-      car.x = (i % 2 === 0 ? -2.5 : 2.5);
-      car.z = -10 - i * 8;
-      car.y = 0.2;
-      car.angle = 0;
+      car.progress = Math.max(0, 0.05 - (i * 0.008));
+      car.laneOffset = (i % 2 === 0 ? -2.0 : 2.0);
       car.speed = 0;
       car.gear = 1;
       car.lap = 1;
-      car.checkpoint = 0;
-      car.mesh.position.set(car.x, car.y, car.z);
-      car.mesh.rotation.y = car.angle;
+      this.updateCarSplineTransform(car);
     });
   }
 
@@ -648,7 +643,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     return group;
   }
 
-  // --- Physics, AI & Game Loop ---
+  // --- Physics, AI & Spline Motion ---
   private startRaceLoop() {
     const loop = () => {
       this.animFrameId = requestAnimationFrame(loop);
@@ -659,7 +654,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateRacePhysics() {
-    if (this.raceWinner() || this.countdownText()) return;
+    if (this.raceWinner() || this.countdownText() || !this.currentTrackCurve) return;
 
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
 
@@ -689,11 +684,11 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         } else if (brakeInput) {
           car.speed = Math.max(-car.maxSpeed * 0.4, car.speed - car.accel * 1.5);
         } else {
-          car.speed *= 0.98;
+          car.speed *= 0.985;
         }
 
-        if (leftInput) car.angle += car.steer * (car.speed >= 0 ? 1 : -1);
-        if (rightInput) car.angle -= car.steer * (car.speed >= 0 ? 1 : -1);
+        if (leftInput) car.laneOffset = Math.max(-5.0, car.laneOffset - car.steer);
+        if (rightInput) car.laneOffset = Math.min(5.0, car.laneOffset + car.steer);
 
         const oldGear = car.gear;
         car.gear = Math.min(6, Math.max(1, Math.floor(Math.abs(car.speed) / (car.maxSpeed / 5)) + 1));
@@ -706,53 +701,67 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         }
       } else {
         car.speed = car.maxSpeed * 0.88;
-        car.z += car.speed * 2;
       }
 
-      car.x += Math.sin(car.angle) * car.speed;
-      car.z += Math.cos(car.angle) * car.speed;
+      car.progress += car.speed;
 
-      car.mesh.position.set(car.x, car.y, car.z);
-      car.mesh.rotation.y = car.angle;
-
-      if (car.z > car.checkpoint * 100 + 50) {
-        car.checkpoint++;
-        if (car.checkpoint >= 3) {
-          car.lap++;
-          car.checkpoint = 0;
-          if (car.lap > 3 && !this.raceWinner()) {
-            this.handleRaceFinish(car, idx);
-          }
+      if (car.progress >= 1.0) {
+        car.progress -= 1.0;
+        car.lap++;
+        if (car.lap > 3 && !this.raceWinner()) {
+          this.handleRaceFinish(car, idx);
         }
       }
+
+      this.updateCarSplineTransform(car);
     });
 
     this.trafficCars.forEach(tCar => {
-      tCar.z += tCar.speed * 1.5;
-      tCar.mesh.position.set(tCar.x, tCar.y, tCar.z);
+      tCar.progress += tCar.speed;
+      if (tCar.progress >= 1.0) tCar.progress -= 1.0;
+      this.updateCarSplineTransform(tCar);
     });
 
     if (this.copCars.length > 0 && this.cars[0]) {
       const pCar = this.cars[0];
       this.copCars.forEach(cop => {
-        const dx = pCar.x - cop.x;
-        const dz = pCar.z - cop.z;
-        const dist = Math.hypot(dx, dz);
-
-        this.radarDistance.set(Math.round(dist * 10));
-
-        if (dist > 1.5) {
-          cop.x += (dx / dist) * 0.3;
-          cop.z += (dz / dist) * 0.3 + 0.2;
-          cop.angle = Math.atan2(dx, dz);
+        cop.speed = Math.min(cop.maxSpeed, cop.speed + cop.accel);
+        if (cop.progress < pCar.progress) {
+          cop.progress += cop.speed * 1.1;
         } else {
+          cop.progress += cop.speed * 0.9;
+        }
+
+        if (cop.progress >= 1.0) cop.progress -= 1.0;
+
+        const dist = Math.abs(pCar.progress - cop.progress) * 1000;
+        this.radarDistance.set(Math.round(dist));
+
+        if (dist < 5) {
           this.audioEngine.playCollision();
         }
 
-        cop.mesh.position.set(cop.x, cop.y, cop.z);
-        cop.mesh.rotation.y = cop.angle;
+        cop.laneOffset = THREE.MathUtils.lerp(cop.laneOffset, pCar.laneOffset, 0.05);
+        this.updateCarSplineTransform(cop);
       });
     }
+  }
+
+  private updateCarSplineTransform(car: CarState) {
+    if (!this.currentTrackCurve) return;
+    const normT = Math.min(0.999, Math.max(0, car.progress % 1.0));
+
+    car.pos = this.currentTrackCurve.getPointAt(normT);
+    car.tangent = this.currentTrackCurve.getTangentAt(normT);
+
+    const perp = new THREE.Vector3(-car.tangent.z, 0, car.tangent.x).normalize();
+    const finalPos = car.pos.clone().addScaledVector(perp, car.laneOffset);
+
+    car.mesh.position.copy(finalPos);
+    car.mesh.position.y += 0.2;
+
+    const angle = Math.atan2(car.tangent.x, car.tangent.z);
+    car.mesh.rotation.y = angle;
   }
 
   private handleRaceFinish(winningCar: CarState, pIdx: number) {
@@ -783,7 +792,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   // --- Rendering Viewports & 3D Dashboard Camera ---
   private renderSplitScreenViewports() {
-    if (!this.renderer || !this.containerRef) return;
+    if (!this.renderer || !this.containerRef || !this.currentTrackCurve) return;
     const container = this.containerRef.nativeElement;
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -810,22 +819,35 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       const cam = new THREE.PerspectiveCamera(60, vw / vh, 0.1, 400);
 
       const mode = this.cameraMode();
+      const carPos = car.mesh.position.clone();
+      const tang = car.tangent.clone().normalize();
+
       if (mode === 'chase') {
-        const camX = car.x - Math.sin(car.angle) * 8;
-        const camZ = car.z - Math.cos(car.angle) * 8;
-        cam.position.set(camX, car.y + 3.5, camZ);
-        cam.lookAt(car.x, car.y + 1, car.z + 5);
+        const camPos = carPos.clone().addScaledVector(tang, -10);
+        camPos.y += 3.8;
+        cam.position.copy(camPos);
+        const lookTarget = carPos.clone().addScaledVector(tang, 10);
+        lookTarget.y += 1.0;
+        cam.lookAt(lookTarget);
       } else if (mode === 'close') {
-        const camX = car.x - Math.sin(car.angle) * 5;
-        const camZ = car.z - Math.cos(car.angle) * 5;
-        cam.position.set(camX, car.y + 2, camZ);
-        cam.lookAt(car.x, car.y + 0.8, car.z + 6);
+        const camPos = carPos.clone().addScaledVector(tang, -6);
+        camPos.y += 2.2;
+        cam.position.copy(camPos);
+        const lookTarget = carPos.clone().addScaledVector(tang, 12);
+        lookTarget.y += 0.8;
+        cam.lookAt(lookTarget);
       } else if (mode === 'hood') {
-        cam.position.set(car.x, car.y + 0.9, car.z + 1.2);
-        cam.lookAt(car.x, car.y + 0.9, car.z + 20);
+        const camPos = carPos.clone().addScaledVector(tang, 1.2);
+        camPos.y += 0.9;
+        cam.position.copy(camPos);
+        const lookTarget = carPos.clone().addScaledVector(tang, 25);
+        cam.lookAt(lookTarget);
       } else if (mode === 'dashboard') {
-        cam.position.set(car.x - 0.3, car.y + 0.75, car.z - 0.2);
-        cam.lookAt(car.x, car.y + 0.75, car.z + 15);
+        const camPos = carPos.clone();
+        camPos.y += 0.75;
+        cam.position.copy(camPos);
+        const lookTarget = carPos.clone().addScaledVector(tang, 20);
+        cam.lookAt(lookTarget);
       }
 
       this.renderer.render(this.scene, cam);
@@ -834,7 +856,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   getDisplaySpeed(pIdx: number): number {
     if (!this.cars[pIdx]) return 0;
-    return Math.round(Math.abs(this.cars[pIdx].speed) * 220);
+    return Math.round((this.cars[pIdx].speed / this.cars[pIdx].maxSpeed) * this.cars[pIdx].data.topSpeedKmH);
   }
 
   getPosition(pIdx: number): number {
@@ -843,7 +865,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     let pos = 1;
     this.cars.forEach((other, idx) => {
       if (idx !== pIdx) {
-        if (other.lap > pCar.lap || (other.lap === pCar.lap && other.checkpoint > pCar.checkpoint)) {
+        if (other.lap > pCar.lap || (other.lap === pCar.lap && other.progress > pCar.progress)) {
           pos++;
         }
       }
