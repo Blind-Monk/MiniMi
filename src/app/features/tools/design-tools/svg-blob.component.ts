@@ -90,7 +90,7 @@ export interface BlobPoint {
                 {{ copyStatus() }}
               </button>
             </div>
-            <textarea readonly [value]="fullSvgCode()"
+            <textarea readonly [value]="fullSvgCode"
                       class="w-full h-24 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono text-indigo-300 focus:outline-none">
             </textarea>
           </div>
