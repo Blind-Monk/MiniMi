@@ -1,0 +1,580 @@
+<div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-6xl mx-auto space-y-4 shadow-2xl font-sans min-h-[680px]">
+
+  <!-- Top Retro Dashboard Header -->
+  <div class="flex flex-wrap items-center justify-between bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-3 rounded-xl border border-slate-800 gap-3 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 via-red-600 to-rose-700 flex items-center justify-center text-2xl font-black shadow-lg shadow-red-950/50">
+        🏎️
+      </div>
+      <div>
+        <h2 class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 tracking-wider">
+          TURBO SPEED II SE 3D
+        </h2>
+        <p class="text-xs text-slate-400 flex items-center gap-2 font-mono">
+          <span>THE NEED FOR SPEED: SPECIAL EDITION (RETRO 1996)</span>
+          <span class="px-1.5 py-0.5 bg-red-950 text-red-400 border border-red-800/60 rounded text-[10px]">ROAD & TRACK APPROVED</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Header Controls & Audio Spectrum -->
+    <div class="flex items-center gap-2">
+      <!-- Animated Spectrum Bar Simulation -->
+      <div class="hidden sm:flex items-end gap-0.5 h-6 px-2 bg-slate-950 border border-slate-800 rounded-lg">
+        <div class="w-1 bg-amber-500 animate-pulse h-3"></div>
+        <div class="w-1 bg-red-500 animate-pulse h-5"></div>
+        <div class="w-1 bg-rose-500 animate-pulse h-2"></div>
+        <div class="w-1 bg-teal-500 animate-pulse h-4"></div>
+      </div>
+
+      <button (click)="toggleMute()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-700 text-xs font-bold transition">
+        {{ isMuted() ? '🔇 Muted' : '🎵 Synth Music On' }}
+      </button>
+      <button (click)="playIntroCinematic()" class="px-3 py-1.5 bg-amber-950 hover:bg-amber-900 text-amber-300 rounded-lg border border-amber-700 text-xs font-bold transition">
+        🎬 FMV Intro
+      </button>
+      <button (click)="openCheatModal()" class="px-3 py-1.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 rounded-lg border border-indigo-700 text-xs font-bold transition">
+        🔑 Cheat Code
+      </button>
+      <button (click)="toggleKeyConfigModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 text-xs font-bold transition">
+        ⚙️ Controls
+      </button>
+      @if (activeView() === 'racing') {
+        <button (click)="exitToMenu()" class="px-3 py-1.5 bg-red-950 hover:bg-red-900 text-red-300 rounded-lg border border-red-800 text-xs font-bold transition">
+          🚪 Exit Race
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- VIEW 1: RETRO MAIN MENU INTERFACE -->
+  @if (activeView() === 'main-menu') {
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-900/60 p-6 rounded-2xl border border-slate-800">
+
+      <!-- Left Navigation Menu Panel -->
+      <div class="md:col-span-5 space-y-3">
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="text-xs font-black uppercase text-amber-500 tracking-widest block">Main Menu Dashboard</span>
+          <p class="text-xs text-slate-400">Select a game mode, view the vehicle showcase, or configure race settings.</p>
+        </div>
+
+        <div class="space-y-2">
+          <button (click)="openRaceSetup('single')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-amber-950 hover:to-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
+            <span class="flex items-center gap-2 group-hover:text-amber-400">
+              <span class="text-lg">🏁</span> Single Race Mode
+            </span>
+            <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Full 8 Grid &gt;</span>
+          </button>
+
+          <button (click)="openRaceSetup('head-to-head')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-rose-950 hover:to-slate-900 border border-slate-800 hover:border-rose-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
+            <span class="flex items-center gap-2 group-hover:text-rose-400">
+              <span class="text-lg">🚓</span> Head-to-Head Pursuit
+            </span>
+            <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Traffic & Cops &gt;</span>
+          </button>
+
+          <button (click)="openRaceSetup('timetrial')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-teal-950 hover:to-slate-900 border border-slate-800 hover:border-teal-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
+            <span class="flex items-center gap-2 group-hover:text-teal-400">
+              <span class="text-lg">⏱️</span> Time Trial Sprint
+            </span>
+            <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Solo Record &gt;</span>
+          </button>
+
+          <button (click)="openRaceSetup('tournament')" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-yellow-950 hover:to-slate-900 border border-slate-800 hover:border-yellow-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
+            <span class="flex items-center gap-2 group-hover:text-amber-400">
+              <span class="text-lg">🏆</span> Tournament Championship
+            </span>
+            <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">Unlock Bonus &gt;</span>
+          </button>
+
+          <button (click)="openShowcase()" class="w-full text-left p-3.5 bg-gradient-to-r from-slate-900 to-slate-950 hover:from-indigo-950 hover:to-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl font-bold text-sm flex items-center justify-between group transition shadow-md">
+            <span class="flex items-center gap-2 group-hover:text-indigo-400">
+              <span class="text-lg">🚘</span> Vehicle Showcase Stage
+            </span>
+            <span class="text-xs text-slate-500 group-hover:text-slate-300 font-mono">3D & Specs &gt;</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Active Vehicle Preview Card -->
+      <div class="md:col-span-7 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 shadow-xl">
+        <div>
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+            <div>
+              <span class="text-xs font-bold text-amber-500 uppercase tracking-widest block">{{ carRoster[selectedCarIndex()].class }}</span>
+              <h3 class="text-2xl font-black text-white">{{ carRoster[selectedCarIndex()].name }}</h3>
+            </div>
+            <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-mono font-bold">
+              {{ carRoster[selectedCarIndex()].topSpeedMph }} MPH
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed italic mb-4">
+            "{{ carRoster[selectedCarIndex()].specsNarrative }}"
+          </p>
+
+          <!-- Vehicle Metrics & Visual Gauge Bars -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
+              <span class="text-slate-500 block text-[10px]">POWER</span>
+              <span class="font-bold text-amber-400">{{ carRoster[selectedCarIndex()].horsepower }} HP</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-amber-500" [style.width.%]="(carRoster[selectedCarIndex()].horsepower / 500) * 100"></div>
+              </div>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
+              <span class="text-slate-500 block text-[10px]">0–60 MPH</span>
+              <span class="font-bold text-teal-400">{{ carRoster[selectedCarIndex()].accel060 }}s</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-teal-400" [style.width.%]="100 - (carRoster[selectedCarIndex()].accel060 / 6) * 100"></div>
+              </div>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
+              <span class="text-slate-500 block text-[10px]">TOP SPEED</span>
+              <span class="font-bold text-rose-400">{{ carRoster[selectedCarIndex()].topSpeedKmH }} KM/H</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-rose-500" [style.width.%]="(carRoster[selectedCarIndex()].topSpeedKmH / 350) * 100"></div>
+              </div>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 space-y-1">
+              <span class="text-slate-500 block text-[10px]">HANDLING</span>
+              <span class="font-bold text-indigo-400">{{ carRoster[selectedCarIndex()].handlingScore }}/10</span>
+              <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500" [style.width.%]="carRoster[selectedCarIndex()].handlingScore * 10"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-900 flex justify-end gap-3">
+          <button (click)="openShowcase()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition">
+            Explore Vehicle Showcase
+          </button>
+          <button (click)="openRaceSetup('single')" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-slate-950 font-black rounded-xl text-xs shadow-lg transition">
+            Quick Race Start 🏁
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- VIEW 2: VEHICLE SHOWCASE SECTION -->
+  @if (activeView() === 'showcase') {
+    <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-xl font-black text-amber-400 tracking-wider">VEHICLE SHOWCASE (ROAD & TRACK MAGAZINE)</h3>
+          <p class="text-xs text-slate-400">Interactive 3D inspection, mechanical specs, and official Road & Track test history.</p>
+        </div>
+        <button (click)="closeShowcase()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold">
+          ← Back to Main Menu
+        </button>
+      </div>
+
+      <!-- Class Filter Tabs -->
+      <div class="flex flex-wrap gap-2">
+        @for (cls of ['All Classes', 'Class A (Exotics)', 'Class B (Muscle & GT)', 'Class C (Sports)', 'Bonus / Secret']; track cls) {
+          <button
+            (click)="selectedClassFilter.set(cls)"
+            [class.bg-amber-500]="selectedClassFilter() === cls"
+            [class.text-slate-950]="selectedClassFilter() === cls"
+            class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold transition">
+            {{ cls }}
+          </button>
+        }
+      </div>
+
+      <!-- Car Selection Selector Row -->
+      <div class="flex overflow-x-auto gap-2 pb-2">
+        @for (car of filteredCarRoster(); track car.id) {
+          <button
+            (click)="selectCarByData(car)"
+            [disabled]="car.isSecret && !car.isUnlocked"
+            [class.border-amber-500]="carRoster[selectedCarIndex()].id === car.id"
+            [class.bg-amber-500\/10]="carRoster[selectedCarIndex()].id === car.id"
+            [class.opacity-40]="car.isSecret && !car.isUnlocked"
+            class="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full" [style.backgroundColor]="car.primaryColor"></span>
+            <span>{{ car.name }}</span>
+            @if (car.isSecret && !car.isUnlocked) {
+              <span class="text-[10px] text-amber-400 font-mono">[LOCKED]</span>
+            }
+          </button>
+        }
+      </div>
+
+      <!-- Showcase 3D Viewer & Spec Sheet -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- 3D Canvas Stage -->
+        <div class="md:col-span-7 bg-slate-950 rounded-2xl border border-slate-800 p-3 flex flex-col justify-between">
+          <canvas #showcaseCanvas class="w-full aspect-[16/10] block rounded-xl"></canvas>
+          <div class="flex justify-between items-center mt-3 text-xs">
+            <span class="text-slate-400 font-mono">360° Rotatable Model Stage</span>
+            <div class="flex gap-2">
+              <button (click)="testEngineSound()" class="px-3 py-1 bg-amber-500/20 text-amber-300 font-bold rounded-lg border border-amber-500/40">
+                🔊 Test Engine Rev
+              </button>
+              <button (click)="toggleShowcaseInterior()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-lg border border-slate-700">
+                {{ showcaseInterior() ? '360° Exterior View' : 'Interior Cabin View' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Specifications Sheet -->
+        <div class="md:col-span-5 bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div>
+            <span class="text-xs font-bold text-amber-500 tracking-widest block">{{ carRoster[selectedCarIndex()].class }}</span>
+            <h3 class="text-2xl font-black text-white">{{ carRoster[selectedCarIndex()].name }}</h3>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">Top Speed:</span>
+              <span class="font-bold text-amber-400">{{ carRoster[selectedCarIndex()].topSpeedMph }} MPH ({{ carRoster[selectedCarIndex()].topSpeedKmH }} KM/H)</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">0–60 MPH Acceleration:</span>
+              <span class="font-bold text-teal-400">{{ carRoster[selectedCarIndex()].accel060 }} seconds</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">Horsepower:</span>
+              <span class="font-bold text-slate-200">{{ carRoster[selectedCarIndex()].horsepower }} HP</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">Torque:</span>
+              <span class="font-bold text-slate-200">{{ carRoster[selectedCarIndex()].torque }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">Weight:</span>
+              <span class="font-bold text-slate-200">{{ carRoster[selectedCarIndex()].weightLbs }} lbs</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-900 font-mono">
+              <span class="text-slate-400">Transmission:</span>
+              <span class="font-bold text-slate-200">{{ carRoster[selectedCarIndex()].transmission }}</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-900">
+            <h4 class="text-xs font-bold text-slate-300 mb-1">Road & Track Retrospective:</h4>
+            <p class="text-xs text-slate-400 leading-relaxed font-sans">
+              {{ carRoster[selectedCarIndex()].historyNarrative }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- VIEW 3: RACE SETUP & TRACK SELECT -->
+  @if (activeView() === 'race-setup') {
+    <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-800 space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-xl font-black text-amber-400 tracking-wider uppercase">Race Setup: {{ gameMode() }}</h3>
+          <p class="text-xs text-slate-400">Customize player count, track, time of day, and police pursuits.</p>
+        </div>
+        <button (click)="activeView.set('main-menu')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold">
+          ← Main Menu
+        </button>
+      </div>
+
+      <!-- Track Selection Grid -->
+      <div class="space-y-2">
+        <span class="text-xs font-bold text-amber-500 uppercase tracking-widest block">Select Track / Circuit:</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          @for (trk of trackRoster; track trk.id; let idx = $index) {
+            <div
+              (click)="selectTrack(idx)"
+              [class.border-amber-500]="selectedTrackIndex() === idx"
+              [class.bg-amber-500\/10]="selectedTrackIndex() === idx"
+              [class.opacity-40]="trk.isSecretBonus && !trk.isUnlocked"
+              class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-slate-600 transition space-y-1">
+              <div class="flex items-center justify-between font-bold text-xs">
+                <span class="text-white">{{ trk.name }}</span>
+                <span class="text-[10px] text-amber-400 font-mono">{{ trk.type }}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 line-clamp-2">{{ trk.description }}</p>
+              @if (trk.isExclusiveSE) {
+                <span class="inline-block text-[9px] px-1.5 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-800 rounded font-mono">SE Exclusive</span>
+              }
+              @if (trk.isSecretBonus && !trk.isUnlocked) {
+                <span class="inline-block text-[9px] px-1.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800 rounded font-mono">Locked Bonus</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Race Condition Switches -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-bold">
+        <!-- Time of Day -->
+        <div class="space-y-1">
+          <span class="text-slate-400 block">Time of Day:</span>
+          <div class="flex gap-1">
+            @for (tod of ['Morning', 'Midday', 'Evening']; track tod) {
+              <button
+                (click)="timeOfDay.set($any(tod))"
+                [class.bg-amber-500]="timeOfDay() === tod"
+                [class.text-slate-950]="timeOfDay() === tod"
+                class="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold transition">
+                {{ tod }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Players -->
+        <div class="space-y-1">
+          <span class="text-slate-400 block">Split-Screen Players:</span>
+          <div class="flex gap-1">
+            @for (count of [1, 2, 3, 4]; track count) {
+              <button
+                (click)="setPlayerCount(count)"
+                [class.bg-red-600]="playerCount() === count"
+                class="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold transition">
+                {{ count }}P
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Pursuit & Traffic Toggles -->
+        <div class="flex items-center gap-4">
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+            <input type="checkbox" [(ngModel)]="trafficEnabled" class="rounded bg-slate-800 border-slate-700 text-amber-500">
+            Civilian Traffic
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+            <input type="checkbox" [(ngModel)]="copPursuitEnabled" class="rounded bg-slate-800 border-slate-700 text-red-500">
+            Police Pursuit
+          </label>
+        </div>
+      </div>
+
+      <!-- Start Button -->
+      <div class="flex justify-end pt-2">
+        <button (click)="startRace()" class="px-8 py-3 bg-gradient-to-r from-amber-500 via-rose-600 to-red-600 text-slate-950 font-black rounded-xl text-sm shadow-xl hover:scale-105 transition-all">
+          START RACE NOW 🏁
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- VIEW 4: ACTIVE 3D RACING VIEWPORT -->
+  @if (activeView() === 'racing') {
+    <div class="space-y-2">
+      <!-- In-Game Camera & View Control Toolbar -->
+      <div class="flex flex-wrap items-center justify-between bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-bold">Camera View:</span>
+          <button (click)="setCameraMode('chase')" [class.bg-amber-500]="cameraMode() === 'chase'" [class.text-slate-950]="cameraMode() === 'chase'" class="px-2.5 py-1 bg-slate-800 rounded font-bold">3rd Chase</button>
+          <button (click)="setCameraMode('close')" [class.bg-amber-500]="cameraMode() === 'close'" [class.text-slate-950]="cameraMode() === 'close'" class="px-2.5 py-1 bg-slate-800 rounded font-bold">Close Cam</button>
+          <button (click)="setCameraMode('hood')" [class.bg-amber-500]="cameraMode() === 'hood'" [class.text-slate-950]="cameraMode() === 'hood'" class="px-2.5 py-1 bg-slate-800 rounded font-bold">Hood/Bumper</button>
+          <button (click)="setCameraMode('dashboard')" [class.bg-amber-500]="cameraMode() === 'dashboard'" [class.text-slate-950]="cameraMode() === 'dashboard'" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded font-bold">3D Cockpit</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button (click)="restartRace()" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded font-bold text-white shadow">
+            🏁 Restart
+          </button>
+          <button (click)="toggleFullscreen()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded font-bold text-slate-300">
+            ⛶ Fullscreen
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D Canvas Container -->
+      <div #container class="relative w-full aspect-[16/9] max-h-[580px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl">
+        <canvas #canvas class="w-full h-full block"></canvas>
+
+        <!-- Race Countdown Overlay (3.. 2.. 1.. GO!) -->
+        @if (countdownText()) {
+          <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center z-40">
+            <span class="text-8xl font-black text-amber-400 animate-ping tracking-widest drop-shadow-2xl">
+              {{ countdownText() }}
+            </span>
+          </div>
+        }
+
+        <!-- Radar Detector & Police Radio Chatter HUD Overlay -->
+        <div class="absolute top-3 right-3 flex flex-col gap-2 items-end">
+          @if (copPursuitEnabled()) {
+            <div class="bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-red-800/80 text-xs font-mono font-bold flex items-center gap-2 text-red-400 animate-pulse">
+              <span>🚨 RADAR DETECTOR:</span>
+              <span>{{ radarDistance() > 0 ? (radarDistance() + 'M NEARBY') : 'SEARCHING...' }}</span>
+            </div>
+          }
+          @if (policeChatterText()) {
+            <div class="bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[11px] font-mono text-amber-300 max-w-xs">
+              📻 {{ policeChatterText() }}
+            </div>
+          }
+        </div>
+
+        <!-- 3D Cockpit Frame Overlay (Visible when cameraMode === 'dashboard') -->
+        @if (cameraMode() === 'dashboard') {
+          <div class="absolute inset-0 pointer-events-none flex flex-col justify-end">
+            <div class="w-full bg-slate-950/90 border-t-4 border-slate-800 p-4 flex items-center justify-between shadow-2xl backdrop-blur-xs">
+              <!-- Left Dial: Speedometer -->
+              <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
+                <div class="text-center">
+                  <span class="text-[10px] text-slate-400 font-mono uppercase block">SPEED</span>
+                  <span class="text-3xl font-black text-rose-500 font-mono tracking-tight">{{ getDisplaySpeed(0) }}</span>
+                  <span class="text-[9px] text-slate-500 font-mono block">KM/H</span>
+                </div>
+              </div>
+
+              <!-- Center Dial: Dashboard Steering Wheel Emblem -->
+              <div class="flex flex-col items-center">
+                <div class="w-20 h-20 rounded-full border-4 border-slate-700 bg-slate-900 flex items-center justify-center shadow-inner relative">
+                  <span class="text-2xl">🏎️</span>
+                  <span class="absolute text-[8px] bottom-1 font-mono text-amber-400 font-bold">NFS SE</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono mt-1 font-bold">{{ carRoster[selectedCarIndex()].name }}</span>
+              </div>
+
+              <!-- Right Dial: Tachometer & Gear Indicator -->
+              <div class="flex items-center gap-3 bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
+                <div class="text-center">
+                  <span class="text-[10px] text-slate-400 font-mono uppercase block">GEAR</span>
+                  <span class="text-3xl font-black text-amber-400 font-mono">{{ cars[0]?.gear || 1 }}</span>
+                  <span class="text-[9px] text-slate-500 font-mono block">6-SPEED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Floating HUD Instrument Overlay (Visible when not in dashboard mode) -->
+        @if (cameraMode() !== 'dashboard') {
+          <div class="absolute top-3 left-3 flex flex-col gap-2">
+            @for (pIdx of [0]; track pIdx) {
+              <div class="bg-slate-950/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-xs font-bold flex items-center gap-3 shadow-xl">
+                <span [style.color]="playerConfigs[pIdx].color" class="font-black">P{{ pIdx + 1 }}</span>
+                <span class="text-amber-400 font-mono">POS: {{ getPosition(pIdx) }}/8</span>
+                <span class="text-teal-400 font-mono">LAP: {{ cars[pIdx]?.lap || 1 }}/3</span>
+                <span class="text-rose-400 font-mono text-sm font-black">{{ getDisplaySpeed(pIdx) }} KM/H</span>
+                <span class="text-slate-400 font-mono">GEAR: {{ cars[pIdx]?.gear || 1 }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Winner Overlay -->
+        @if (raceWinner()) {
+          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-center z-30 p-6">
+            <span class="text-6xl animate-bounce">🏆</span>
+            <h2 class="text-3xl font-black text-amber-400 tracking-wider">{{ raceWinner() }}</h2>
+
+            @if (gameMode() === 'tournament') {
+              <button (click)="nextTournamentRound()" class="px-8 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black rounded-xl shadow-xl hover:scale-105 transition-all">
+                NEXT TOURNAMENT ROUND 🏁
+              </button>
+            } @else {
+              <button (click)="restartRace()" class="px-8 py-3 bg-gradient-to-r from-red-600 to-amber-500 text-slate-950 font-black rounded-xl shadow-xl hover:scale-105 transition-all">
+                PLAY AGAIN
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- VIEW 5: CINEMATIC INTRO MODAL -->
+  @if (showIntroModal()) {
+    <div class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center space-y-6">
+      <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-4xl shadow-2xl animate-bounce">
+        🏎️
+      </div>
+      <div class="space-y-2">
+        <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 tracking-wider">
+          THE NEED FOR SPEED: SPECIAL EDITION
+        </h2>
+        <p class="text-sm text-slate-300 font-mono">1996 ELECTRONIC ARTS & ROAD & TRACK CLASSIC RETRO EDITION</p>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg text-xs text-slate-300 space-y-3 font-mono">
+        <p>⚡ Direct 3D High-Tech Polygon Engine Enabled</p>
+        <p>🔊 Web Audio API Synthesizer ( Jeff van Dyck / Saki Kaskas Sound Tracks )</p>
+        <p>🏁 Road & Track Test Data & Real Exotic Car Dynamics</p>
+      </div>
+
+      <button (click)="closeIntroModal()" class="px-8 py-3 bg-gradient-to-r from-amber-500 to-red-600 text-slate-950 font-black rounded-xl shadow-xl hover:scale-105 transition-all">
+        ENTER MAIN MENU DASHBOARD 🏁
+      </button>
+    </div>
+  }
+
+  <!-- VIEW 6: CHEAT CONSOLE MODAL -->
+  @if (activeView() === 'cheat-modal') {
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-amber-400">🔑 Enter NFS SE Secret Cheat Code</h3>
+          <button (click)="closeCheatModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+        </div>
+
+        <div class="space-y-3">
+          <p class="text-xs text-slate-300">Type secret cheat codes to unlock secret vehicles and tracks.</p>
+          <input
+            type="text"
+            [(ngModel)]="cheatInput"
+            placeholder="e.g. WARRIOR or LOSTVEGAS"
+            class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500">
+
+          @if (cheatMessage()) {
+            <p class="text-xs font-bold text-amber-300 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/30">
+              {{ cheatMessage() }}
+            </p>
+          }
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button (click)="closeCheatModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold">Close</button>
+          <button (click)="applyCheat()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs">Apply Cheat</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- KEYBINDINGS CONFIG MODAL -->
+  @if (showKeyModal()) {
+    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-base font-bold text-amber-400">⚙️ Configure Player Keybindings & Gamepads</h3>
+          <button (click)="toggleKeyConfigModal()" class="text-slate-400 hover:text-white font-bold text-xl">✕</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          @for (cfg of playerConfigs; track cfg.id) {
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center justify-between font-bold" [style.color]="cfg.color">
+                <span>PLAYER {{ cfg.id + 1 }}</span>
+                <label class="flex items-center gap-1 cursor-pointer text-slate-300 font-normal">
+                  <input type="checkbox" [(ngModel)]="cfg.useGamepad" class="rounded bg-slate-800 border-slate-700 text-red-500">
+                  Gamepad
+                </label>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-slate-300">
+                <div>Accelerate: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.up }}</span></div>
+                <div>Brake/Rev: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.down }}</span></div>
+                <div>Steer Left: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.left }}</span></div>
+                <div>Steer Right: <span class="bg-slate-800 px-1.5 py-0.5 rounded font-mono text-amber-300">{{ cfg.keys.right }}</span></div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="text-right pt-2 border-t border-slate-800">
+          <button (click)="toggleKeyConfigModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-lg text-xs">
+            Save & Close
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

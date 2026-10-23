@@ -1,0 +1,8 @@
+/* Retro Dashboard Aesthetic styling */
+:host {
+  display: block;
+}
+
+canvas {
+  touch-action: none;
+}
