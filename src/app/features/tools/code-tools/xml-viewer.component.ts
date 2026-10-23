@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
           <span>🌳 XML Formatter & Tree Viewer</span>
         </h3>
         <p class="text-xs text-slate-400">
-          Format raw XML documents into collapsible tree views with syntax validation.
+          Format raw XML documents into clean indented structures with DOM parser validation.
         </p>
 
         <div class="mt-4 space-y-4">
@@ -36,7 +36,7 @@ import { FormsModule } from '@angular/forms';
             </div>
 
             <div>
-              <label class="text-xs font-semibold text-slate-400 block mb-1">Formatted Tree Output</label>
+              <label class="text-xs font-semibold text-slate-400 block mb-1">Formatted Output</label>
               <textarea readonly [value]="outputXml()"
                         class="w-full h-64 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs font-mono text-emerald-400 focus:outline-none">
               </textarea>
@@ -57,22 +57,75 @@ export class XmlViewerComponent {
   }
 
   formatXml() {
-    const raw = this.inputXml();
-    let indent = 0;
-    const tokens = raw.replace(/>\s*</g, '><').replace(/</g, '\n<').split('\n').filter(Boolean);
+    const raw = this.inputXml().trim();
+    if (!raw) {
+      this.outputXml.set('');
+      return;
+    }
 
-    const formatted = tokens.map(token => {
-      if (token.match(/^<\//)) {
-        indent = Math.max(0, indent - 1);
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(raw, 'text/xml');
+      const parserError = xmlDoc.querySelector('parsererror');
+      if (parserError) {
+        this.outputXml.set(`⚠️ XML Parse Error:\n${parserError.textContent}`);
+        return;
       }
-      const line = '  '.repeat(indent) + token;
-      if (token.match(/^<[^\/!].*[^/]>$/) && !token.match(/^<\?/)) {
-        indent++;
-      }
-      return line;
-    }).join('\n');
 
-    this.outputXml.set(formatted);
+      this.outputXml.set(this.serializeNode(xmlDoc, 0));
+    } catch (e: any) {
+      this.outputXml.set(`⚠️ Error parsing XML: ${e?.message || e}`);
+    }
+  }
+
+  private serializeNode(node: Node, level: number): string {
+    const indent = '  '.repeat(level);
+
+    if (node.nodeType === Node.DOCUMENT_NODE) {
+      return Array.from(node.childNodes)
+        .map(child => this.serializeNode(child, level))
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    if (node.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+      return `${indent}<?${node.nodeName} ${(node as ProcessingInstruction).data}?>`;
+    }
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      const val = node.nodeValue?.trim();
+      return val ? `${indent}${val}` : '';
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const elem = node as Element;
+      const attrs = Array.from(elem.attributes)
+        .map(a => `${a.name}="${a.value}"`)
+        .join(' ');
+      const attrStr = attrs ? ` ${attrs}` : '';
+
+      const childNodes = Array.from(elem.childNodes).filter(
+        c => c.nodeType !== Node.TEXT_NODE || c.nodeValue?.trim()
+      );
+
+      if (childNodes.length === 0) {
+        return `${indent}<${elem.tagName}${attrStr}/>`;
+      }
+
+      // Inline short single text child node
+      if (childNodes.length === 1 && childNodes[0].nodeType === Node.TEXT_NODE) {
+        return `${indent}<${elem.tagName}${attrStr}>${childNodes[0].nodeValue?.trim()}</${elem.tagName}>`;
+      }
+
+      const inner = childNodes
+        .map(child => this.serializeNode(child, level + 1))
+        .filter(Boolean)
+        .join('\n');
+
+      return `${indent}<${elem.tagName}${attrStr}>\n${inner}\n${indent}</${elem.tagName}>`;
+    }
+
+    return '';
   }
 
   copyOutput() {
