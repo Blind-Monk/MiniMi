@@ -1,0 +1,17 @@
+
+> minimi-app@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.07 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.10 MB
+
+Application bundle generation complete. [11.094 seconds] - 2026-10-23T09:31:27.699Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/

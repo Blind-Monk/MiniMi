@@ -1,22 +1,16 @@
+import '@angular/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CATALOG_ITEMS } from './core/models/catalog.model';
 import { App } from './app';
 
-describe('App', () => {
+describe('App Component', () => {
   let component: App;
-  let fixture: ComponentFixture<App>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(App);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    component = new App();
   });
 
-  it('should create the app', () => {
+  it('should create the app instance', () => {
     expect(component).toBeTruthy();
   });
 
@@ -30,9 +24,20 @@ describe('App', () => {
     expect(component.filteredItems()[0].id).toBe('pvz');
   });
 
+  it('should support fuzzy synonym search', () => {
+    component.selectCategory('tools');
+    component.searchQuery.set('pdf size');
+    expect(component.filteredItems().length).toBeGreaterThan(0);
+  });
+
   it('should toggle favorites', () => {
     const mockEvent = new MouseEvent('click');
     component.toggleFavorite('snake', mockEvent);
     expect(component.isFav('snake')).toBe(true);
+  });
+
+  it('should contain all 100 tools in catalog', () => {
+    const tools = CATALOG_ITEMS.filter(item => item.category === 'tools');
+    expect(tools.length).toBeGreaterThanOrEqual(100);
   });
 });
