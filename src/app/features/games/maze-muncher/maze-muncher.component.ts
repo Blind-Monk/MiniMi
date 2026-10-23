@@ -29,6 +29,7 @@ interface Ghost {
 interface LevelConfig {
   id: number;
   name: string;
+  difficulty: 'SIMPLE' | 'MEDIUM' | 'COMPLEX' | 'EXTREME';
   grid: number[][]; // 0: path, 1: wall, 2: dot, 3: power pellet, 4: door, 5: fruit
   ghostSpeed: number;
   frightenedDuration: number;
@@ -36,6 +37,32 @@ interface LevelConfig {
 
 const TILE_SIZE = 30; // 19 cols x 21 rows = 570 x 630 px canvas
 
+// 0: Simple Warm-Up (Wide open paths, low obstacles)
+const MAZE_SIMPLE: number[][] = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,1],
+  [1,2,1,1,0,0,0,0,2,1,2,0,0,0,0,1,1,2,1],
+  [1,2,1,1,0,0,0,0,2,1,2,0,0,0,0,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,2,0,0,1,1,1,1,1,0,0,2,1,1,2,1],
+  [1,2,2,2,2,0,0,2,2,1,2,2,0,0,2,2,2,2,1],
+  [1,1,1,1,2,0,0,1,0,1,0,1,0,0,2,1,1,1,1],
+  [0,0,0,1,2,0,0,0,0,0,0,0,0,0,2,1,0,0,0],
+  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
+  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
+  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
+  [0,0,0,1,2,0,0,0,0,5,0,0,0,0,2,1,0,0,0],
+  [1,1,1,1,2,0,0,1,1,1,1,1,0,0,2,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,2,0,0,0,2,1,2,0,0,0,2,1,1,2,1],
+  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
+  [1,1,2,1,2,0,0,1,1,1,1,1,0,0,2,1,2,1,1],
+  [1,2,2,2,2,0,0,2,2,1,2,2,0,0,2,2,2,2,1],
+  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// 1: Classic Arena
 const MAZE_LEVEL_1: number[][] = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,3,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,3,1],
@@ -47,7 +74,7 @@ const MAZE_LEVEL_1: number[][] = [
   [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
   [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
   [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0], // Tunnel Row 10
+  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
   [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
   [0,0,0,1,2,1,0,0,0,5,0,0,0,1,2,1,0,0,0],
   [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
@@ -60,97 +87,26 @@ const MAZE_LEVEL_1: number[][] = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-const MAZE_LEVEL_2: number[][] = [
+// 2: Complex Labyrinth (Tight passages, heavy walls, dead ends)
+const MAZE_COMPLEX: number[][] = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,3,1],
-  [1,2,1,1,2,1,2,1,2,1,2,1,2,1,2,1,1,2,1],
-  [1,2,1,1,2,2,2,1,2,2,2,1,2,2,2,1,1,2,1],
-  [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
-  [1,1,1,1,2,1,2,2,2,1,2,2,2,1,2,1,1,1,1],
-  [1,2,2,2,2,1,2,1,1,1,1,1,2,1,2,2,2,2,1],
-  [1,2,1,1,2,1,2,1,0,0,0,1,2,1,2,1,1,2,1],
-  [0,0,0,1,2,2,2,1,0,0,0,1,2,2,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
+  [1,3,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,1],
+  [1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,1],
+  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
+  [1,2,1,2,2,2,2,1,2,2,2,1,2,2,2,2,1,2,1],
+  [1,2,1,2,1,1,2,1,1,1,1,1,2,1,1,2,1,2,1],
+  [1,2,2,2,1,1,2,1,0,0,0,1,2,1,1,2,2,2,1],
+  [0,0,0,1,1,1,2,1,0,0,0,1,2,1,1,1,0,0,0],
+  [1,1,1,1,2,2,2,1,1,4,1,1,2,2,2,1,1,1,1],
   [0,0,0,0,2,1,0,1,4,4,4,1,0,1,2,0,0,0,0],
   [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,2,2,0,0,5,0,0,2,2,2,1,0,0,0],
+  [0,0,0,1,2,1,2,0,0,5,0,0,2,1,2,1,0,0,0],
   [1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-const MAZE_LEVEL_3: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,3,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,5,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-const MAZE_LEVEL_4: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,1,1,2,1,2,1,1,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,2,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,1,0,0,0,1,2,2,2,2,2,2,1],
-  [1,1,1,1,2,1,2,1,0,0,0,1,2,1,2,1,1,1,1],
-  [0,0,0,1,2,1,2,1,1,4,1,1,2,1,2,1,0,0,0],
-  [0,0,0,1,2,1,0,1,4,4,4,1,0,1,2,1,0,0,0],
-  [0,0,0,0,2,0,0,1,1,1,1,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,0,0,5,0,0,0,1,2,1,1,1,1],
-  [0,0,0,1,2,1,1,1,2,1,2,1,1,1,2,1,0,0,0],
-  [1,1,1,1,2,2,2,2,2,1,2,2,2,2,2,1,1,1,1],
-  [1,2,2,2,2,1,1,1,2,1,2,1,1,1,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-const MAZE_LEVEL_5: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,3,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,2,1,0,0,0,0,1,2,1,2,1,0,0,0,0,1,2,1],
-  [1,2,1,0,1,1,0,1,2,1,2,1,0,1,1,0,1,2,1],
-  [1,2,1,0,1,1,0,1,2,2,2,1,0,1,1,0,1,2,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,5,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
+  [1,2,2,2,2,2,2,1,2,1,2,1,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,2,1,2,1,2,1,2,1,1,1,1,2,1],
+  [1,3,2,2,2,1,2,2,2,0,2,2,2,1,2,2,2,3,1],
+  [1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1],
   [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
   [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
@@ -169,7 +125,7 @@ const MAZE_LEVEL_5: number[][] = [
           <span class="text-3xl animate-bounce">🟡</span>
           <div>
             <h2 class="text-xl font-black text-amber-400 tracking-wider">MAZE MUNCHER</h2>
-            <p class="text-xs text-slate-400">Strict Tile-Grid Collision • Emoji Caricature Ghosts</p>
+            <p class="text-xs text-slate-400">Simple & Complex Levels • Emoji Caricature Ghosts</p>
           </div>
         </div>
 
@@ -196,7 +152,10 @@ const MAZE_LEVEL_5: number[][] = [
             <span *ngFor="let life of getLivesArray()" class="text-amber-400 text-lg">🟡</span>
           </div>
           <div class="text-amber-300 font-bold text-sm">
-            Level {{ currentLevelIndex() + 1 }}: {{ getCurrentLevelName() }}
+            Maze {{ currentLevelIndex() + 1 }}: {{ getCurrentLevelName() }}
+            <span class="text-[10px] px-2 py-0.5 rounded ml-1 uppercase" [ngClass]="getDifficultyBadgeClass(getCurrentLevelDifficulty())">
+              {{ getCurrentLevelDifficulty() }}
+            </span>
           </div>
           <div class="text-cyan-300">
             Dots Left: <strong>{{ remainingPellets() }}</strong>
@@ -212,22 +171,32 @@ const MAZE_LEVEL_5: number[][] = [
           <span class="text-6xl mb-1 animate-pulse">🟡 👻 🤡 👾 👺</span>
           <h1 class="text-3xl font-black text-amber-400 tracking-wider">MAZE MUNCHER</h1>
           <p class="text-xs text-slate-300 max-w-md leading-relaxed">
-            Strict grid-snapped arcade physics! Eat dots, collect power pellets, and outsmart 4 caricature emoji chasers!
+            Choose from <strong>Simple Warm-Up</strong> mazes to <strong>Ultra Complex Labyrinths</strong>!
           </p>
 
-          <div class="w-full max-w-sm bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-            <span class="text-xs font-bold text-amber-300 uppercase tracking-widest">Select Maze Layout:</span>
-            <div class="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto p-1">
+          <div class="w-full max-w-md bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+            <span class="text-xs font-bold text-amber-300 uppercase tracking-widest block">Select Maze Layout & Difficulty:</span>
+            <div class="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto p-1">
               <button *ngFor="let lvl of levels; let i = index" (click)="startGame(i)" class="p-2 bg-slate-800 hover:bg-indigo-900 border border-slate-700 hover:border-indigo-500 rounded-lg flex items-center justify-between text-left text-xs transition">
-                <span class="font-bold text-white">Maze {{ i + 1 }}: {{ lvl.name }}</span>
-                <span class="text-amber-400 font-mono">Select ➔</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-white">Maze {{ i + 1 }}: {{ lvl.name }}</span>
+                  <span class="text-[9px] px-2 py-0.5 rounded font-mono uppercase" [ngClass]="getDifficultyBadgeClass(lvl.difficulty)">
+                    {{ lvl.difficulty }}
+                  </span>
+                </div>
+                <span class="text-amber-400 font-mono">Play ➔</span>
               </button>
             </div>
           </div>
 
-          <button (click)="startGame(0)" class="w-48 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-sm shadow-xl transform active:scale-95 transition">
-            🎮 Quick Start (Maze 1)
-          </button>
+          <div class="flex space-x-3">
+            <button (click)="startGame(0)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">
+              🌱 Simple Level
+            </button>
+            <button (click)="startGame(2)" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow">
+              🔥 Complex Level
+            </button>
+          </div>
         </div>
 
         <!-- Overlay 2: PAUSED -->
@@ -300,33 +269,26 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
   currentLevelIndex = signal<number>(0);
   remainingPellets = signal<number>(0);
 
-  // 5 Distinct Maze Configurations
+  // Simple, Medium, and Complex Maze Configurations
   levels: LevelConfig[] = [
-    { id: 1, name: 'Classic Arena', grid: MAZE_LEVEL_1, ghostSpeed: 0.08, frightenedDuration: 8 },
-    { id: 2, name: 'Twin Corridors', grid: MAZE_LEVEL_2, ghostSpeed: 0.09, frightenedDuration: 6 },
-    { id: 3, name: 'Tunnel Cross', grid: MAZE_LEVEL_3, ghostSpeed: 0.10, frightenedDuration: 5 },
-    { id: 4, name: 'The Gauntlet', grid: MAZE_LEVEL_4, ghostSpeed: 0.11, frightenedDuration: 4 },
-    { id: 5, name: 'Spiral Fortress', grid: MAZE_LEVEL_5, ghostSpeed: 0.12, frightenedDuration: 3 }
+    { id: 0, name: 'Simple Warm-Up', difficulty: 'SIMPLE', grid: MAZE_SIMPLE, ghostSpeed: 0.05, frightenedDuration: 12 },
+    { id: 1, name: 'Classic Arena', difficulty: 'MEDIUM', grid: MAZE_LEVEL_1, ghostSpeed: 0.08, frightenedDuration: 8 },
+    { id: 2, name: 'Complex Labyrinth', difficulty: 'COMPLEX', grid: MAZE_COMPLEX, ghostSpeed: 0.13, frightenedDuration: 3 }
   ];
 
-  // Grid Tile Based Engine
   private ctx!: CanvasRenderingContext2D;
   private animFrameId: number | null = null;
   private currentGrid: number[][] = [];
 
-  // Player Grid Position
   private playerGridX = 9;
   private playerGridY = 16;
-  private playerSubX = 0; // 0..1
+  private playerSubX = 0;
   private playerSubY = 0;
   private playerDir: Direction = 'NONE';
   private playerNextDir: Direction = 'NONE';
-  private playerSpeed = 0.12; // Fraction of tile per tick
-  private mouthAngle = 0.2;
+  private playerSpeed = 0.12;
 
-  // Ghosts
   private ghosts: Ghost[] = [];
-
   private frightenedTimer = 0;
   private ghostsEatenMultiplier = 1;
 
@@ -347,6 +309,19 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
 
   getCurrentLevelName(): string {
     return this.levels[this.currentLevelIndex()]?.name || 'Maze';
+  }
+
+  getCurrentLevelDifficulty(): 'SIMPLE' | 'MEDIUM' | 'COMPLEX' | 'EXTREME' {
+    return this.levels[this.currentLevelIndex()]?.difficulty || 'MEDIUM';
+  }
+
+  getDifficultyBadgeClass(diff: string): string {
+    switch (diff) {
+      case 'SIMPLE': return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      case 'MEDIUM': return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      case 'COMPLEX': return 'bg-red-500/20 text-red-300 border border-red-500/30';
+      default: return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
+    }
   }
 
   setGameState(state: 'MENU' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAME_OVER') {
@@ -403,7 +378,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     this.playerDir = 'NONE';
     this.playerNextDir = 'NONE';
 
-    // Emoji Caricature Ghosts
     this.ghosts = [
       {
         id: 'blinky', name: 'Spook', emoji: '👻', frightenedEmoji: '🙀', color: '#ef4444',
@@ -472,8 +446,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
   }
 
   private updateGameLogic() {
-    // Exact Grid Tile Physics Logic
-    // 1. Check if centered on current tile to turn
     const isAtTileCenter = Math.abs(this.playerSubX) < 0.05 && Math.abs(this.playerSubY) < 0.05;
 
     if (isAtTileCenter) {
@@ -485,7 +457,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       }
     }
 
-    // 2. Advance player movement if direction is open
     if (this.canMoveTile(this.playerGridX, this.playerGridY, this.playerDir)) {
       if (this.playerDir === 'RIGHT') {
         this.playerSubX += this.playerSpeed;
@@ -513,16 +484,13 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Tunnel Wrap
       if (this.playerGridX < 0) this.playerGridX = 18;
       if (this.playerGridX > 18) this.playerGridX = 0;
     } else {
-      // Blocked by wall: stop exact sub-pixel drift
       this.playerSubX = 0;
       this.playerSubY = 0;
     }
 
-    // Eat dots
     const currentTile = this.currentGrid[this.playerGridY]?.[this.playerGridX];
     if (currentTile === 2) {
       this.currentGrid[this.playerGridY][this.playerGridX] = 0;
@@ -541,19 +509,16 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       this.audioService.playSfx('eatFruit');
     }
 
-    // Highscore
     if (this.score() > this.highScore()) {
       this.highScore.set(this.score());
       localStorage.setItem('maze_muncher_highscore', this.score().toString());
     }
 
-    // Level Clear
     if (this.remainingPellets() <= 0) {
       this.setGameState('LEVEL_COMPLETE');
       return;
     }
 
-    // Frightened timer
     if (this.frightenedTimer > 0) {
       this.frightenedTimer -= 1 / 60;
       if (this.frightenedTimer <= 0) {
@@ -561,10 +526,8 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Update Ghost AI
     this.updateGhostAI();
 
-    // Collision check
     for (const ghost of this.ghosts) {
       const dist = Math.hypot(
         (this.playerGridX + this.playerSubX) - (ghost.gridX + ghost.subX),
@@ -620,7 +583,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
         ghost.targetX = Math.floor(Math.random() * 19);
         ghost.targetY = Math.floor(Math.random() * 21);
       } else {
-        // AI Rules
         if (ghost.id === 'blinky') {
           ghost.targetX = this.playerGridX;
           ghost.targetY = this.playerGridY;
@@ -636,7 +598,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Ghost Grid Turning at Tile Center
       const isGhostAtCenter = Math.abs(ghost.subX) < 0.05 && Math.abs(ghost.subY) < 0.05;
 
       if (isGhostAtCenter) {
@@ -667,14 +628,12 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Advance ghost sub-pixel
       const speed = ghost.isFrightened ? ghost.speed * 0.6 : ghost.speed;
       if (ghost.dir === 'RIGHT') { ghost.subX += speed; if (ghost.subX >= 1.0) { ghost.gridX++; ghost.subX = 0; } }
       else if (ghost.dir === 'LEFT') { ghost.subX -= speed; if (ghost.subX <= -1.0) { ghost.gridX--; ghost.subX = 0; } }
       else if (ghost.dir === 'DOWN') { ghost.subY += speed; if (ghost.subY >= 1.0) { ghost.gridY++; ghost.subY = 0; } }
       else if (ghost.dir === 'UP') { ghost.subY -= speed; if (ghost.subY <= -1.0) { ghost.gridY--; ghost.subY = 0; } }
 
-      // Ghost Tunnel Wrap
       if (ghost.gridX < 0) ghost.gridX = 18;
       if (ghost.gridX > 18) ghost.gridX = 0;
     });
@@ -687,10 +646,10 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     const targetY = gy + delta.dy;
 
     if (targetY < 0 || targetY >= this.currentGrid.length || targetX < 0 || targetX >= this.currentGrid[0].length) {
-      return targetY === 10; // Tunnel Row
+      return targetY === 10;
     }
 
-    return this.currentGrid[targetY][targetX] !== 1; // 1 is solid wall
+    return this.currentGrid[targetY][targetX] !== 1;
   }
 
   private getDelta(dir: Direction): { dx: number; dy: number } {
@@ -722,33 +681,32 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     this.ctx.fillStyle = '#020617';
     this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Map Walls & Pellets
     for (let r = 0; r < this.currentGrid.length; r++) {
       for (let c = 0; c < this.currentGrid[r].length; c++) {
         const tile = this.currentGrid[r][c];
         const x = c * TILE_SIZE;
         const y = r * TILE_SIZE;
 
-        if (tile === 1) { // Solid Arcade Wall
+        if (tile === 1) {
           this.ctx.fillStyle = '#1e40af';
           this.ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
           this.ctx.strokeStyle = '#3b82f6';
           this.ctx.lineWidth = 2;
           this.ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
-        } else if (tile === 2) { // Dot
+        } else if (tile === 2) {
           this.ctx.fillStyle = '#fde047';
           this.ctx.beginPath();
           this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 3.5, 0, Math.PI * 2);
           this.ctx.fill();
-        } else if (tile === 3) { // Power Pellet
+        } else if (tile === 3) {
           this.ctx.fillStyle = '#facc15';
           this.ctx.beginPath();
           this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 8.5, 0, Math.PI * 2);
           this.ctx.fill();
-        } else if (tile === 4) { // Door
+        } else if (tile === 4) {
           this.ctx.fillStyle = '#f472b6';
           this.ctx.fillRect(x + 2, y + TILE_SIZE / 2 - 2, TILE_SIZE - 4, 4);
-        } else if (tile === 5) { // Cherry
+        } else if (tile === 5) {
           this.ctx.font = '20px sans-serif';
           this.ctx.textAlign = 'center';
           this.ctx.textBaseline = 'middle';
@@ -757,7 +715,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Draw Pacman
     const px = (this.playerGridX + this.playerSubX) * TILE_SIZE + TILE_SIZE / 2;
     const py = (this.playerGridY + this.playerSubY) * TILE_SIZE + TILE_SIZE / 2;
 
@@ -772,7 +729,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     this.ctx.lineTo(px, py);
     this.ctx.fill();
 
-    // Draw Emoji Caricature Ghosts
     this.ctx.font = '22px sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
