@@ -566,6 +566,15 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     tags: ['Markdown', 'Editor', 'Preview', 'HTML', 'Notes']
   },
   {
+    id: 'latex-editor',
+    name: 'LaTeX Editor & Compiler',
+    category: 'tools',
+    subcategory: 'Code & Data',
+    description: 'In-browser LaTeX document editor with predefined resume templates, live compiled preview, and print/PDF export.',
+    icon: '📄',
+    tags: ['LaTeX', 'Editor', 'Compiler', 'Resume', 'CV', 'Templates', 'TEX']
+  },
+  {
     id: 'curl-converter',
     name: 'cURL to Code Converter',
     category: 'tools',
@@ -977,6 +986,15 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     description: 'Parse resume text, analyze keyword matches against job descriptions, and extract formatting suggestions.',
     icon: '👔',
     tags: ['Resume', 'CV', 'Parser', 'Keywords', 'Job', 'Match', 'Career']
+  },
+  {
+    id: 'resume-builder',
+    name: 'Interactive Resume Builder',
+    category: 'tools',
+    subcategory: 'Documents & PDF',
+    description: 'Full-featured standard resume builder with structured form sections, theme styling, and PDF print export.',
+    icon: '💼',
+    tags: ['Resume', 'Builder', 'CV', 'Career', 'PDF', 'Job', 'Templates']
   },
 
   // --- 8. Design & CSS Generators ---

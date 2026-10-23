@@ -67,6 +67,7 @@ import { YamlJsonComponent } from './features/tools/code-tools/yaml-json.compone
 import { JsonCsvComponent } from './features/tools/code-tools/json-csv.component';
 import { JsonTypesComponent } from './features/tools/code-tools/json-types.component';
 import { MarkdownEditorComponent } from './features/tools/code-tools/markdown-editor.component';
+import { LatexEditorComponent } from './features/tools/code-tools/latex-editor.component';
 import { CurlConverterComponent } from './features/tools/code-tools/curl-converter.component';
 import { GraphqlValidatorComponent } from './features/tools/code-tools/graphql-validator.component';
 import { TomlJsonComponent } from './features/tools/code-tools/toml-json.component';
@@ -112,6 +113,7 @@ import { PdfRedactComponent } from './features/tools/doc-tools/pdf-redact.compon
 import { MarkdownPdfComponent } from './features/tools/doc-tools/markdown-pdf.component';
 import { SpreadsheetViewerComponent } from './features/tools/doc-tools/spreadsheet-viewer.component';
 import { ResumeParserComponent } from './features/tools/doc-tools/resume-parser.component';
+import { ResumeBuilderComponent } from './features/tools/doc-tools/resume-builder.component';
 import { CssGradientComponent } from './features/tools/design-tools/css-gradient.component';
 import { CssShadowComponent } from './features/tools/design-tools/css-shadow.component';
 import { BorderRadiusComponent } from './features/tools/design-tools/border-radius.component';
@@ -196,6 +198,7 @@ import { KanbanBoardComponent } from './features/tools/productivity-tools/kanban
     JsonCsvComponent,
     JsonTypesComponent,
     MarkdownEditorComponent,
+    LatexEditorComponent,
     CurlConverterComponent,
     GraphqlValidatorComponent,
     TomlJsonComponent,
@@ -241,6 +244,7 @@ import { KanbanBoardComponent } from './features/tools/productivity-tools/kanban
     MarkdownPdfComponent,
     SpreadsheetViewerComponent,
     ResumeParserComponent,
+    ResumeBuilderComponent,
     CssGradientComponent,
     CssShadowComponent,
     BorderRadiusComponent,
@@ -290,7 +294,7 @@ export class App {
     'music': ['audio-cut', 'pitch-speed', 'tone-gen', 'instrument-tuner', 'metronome'],
     'tune': ['instrument-tuner', 'metronome', 'pitch-speed'],
     'clock': ['epoch-converter', 'timezone-planner', 'timer-stopwatch', 'cron-parser'],
-    'code': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'xml-viewer', 'json-types', 'curl-converter'],
+    'code': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'xml-viewer', 'json-types', 'curl-converter', 'latex-editor'],
     'beautify': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'xml-viewer', 'json-formatter'],
     'minify': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'json-formatter'],
     'web': ['what-is-my-ip', 'dns-lookup', 'url-parser', 'http-status-guide', 'user-agent-parser', 'robots-sitemap-validator', 'open-graph-inspector', 'meta-tags-gen'],
