@@ -1,13 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-mario3d',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans select-none">
 
       <!-- Top HUD Header -->
       <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -21,6 +23,9 @@ import * as THREE from 'three';
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-amber-400 text-sm">🪙 Coins: {{ coins() }}</div>
+          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
+            ⛶
+          </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
           </button>
@@ -35,8 +40,17 @@ import * as THREE from 'three';
           🎮 Controls: WASD or Arrow Keys to Move • Spacebar to Jump
         </div>
 
+        <!-- Touch Controls for Mobile Devices -->
+        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
+          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
+          <button (click)="jump()" class="w-14 h-12 bg-red-600 active:bg-red-500 text-white font-black rounded-xl shadow-lg border border-red-400">🦘</button>
+        </div>
+
         @if (gameOver()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center">
+          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center z-20">
             <span class="text-5xl">💥</span>
             <h2 class="text-3xl font-black text-red-500">GAME OVER</h2>
             <p class="text-slate-300 text-sm">Total Coins Collected: <span class="text-amber-400 font-bold">{{ coins() }}</span></p>
@@ -52,6 +66,8 @@ import * as THREE from 'three';
 export class Mario3dComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
 
   coins = signal<number>(0);
   gameOver = signal<boolean>(false);
@@ -72,12 +88,20 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   private animFrameId: number = 0;
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('funny-quirky');
     this.initThreeJS();
     this.buildLevel();
     this.startLoop();
   }
 
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
+  }
+
   restartGame() {
+    this.audioService.playClickSound();
     this.coins.set(0);
     this.gameOver.set(false);
     this.posX = 0;
@@ -86,6 +110,22 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     this.velY = 0;
     this.isGrounded = true;
     if (this.playerMesh) this.playerMesh.position.set(0, 0.5, 0);
+  }
+
+  jump() {
+    if (this.isGrounded) {
+      this.velY = 0.25;
+      this.isGrounded = false;
+      this.audioService.playJumpSound();
+    }
+  }
+
+  movePlayer(dir: string) {
+    const speed = 0.4;
+    if (dir === 'w') this.posZ -= speed;
+    if (dir === 's') this.posZ += speed;
+    if (dir === 'a') this.posX -= speed;
+    if (dir === 'd') this.posX += speed;
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -109,6 +149,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
     const amb = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(amb);
@@ -123,6 +164,12 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     this.playerMesh = new THREE.Mesh(pGeo, pMat);
     this.playerMesh.position.set(0, 0.5, 0);
     this.scene.add(this.playerMesh);
+
+    ResponsiveUtil.setupCanvasResizeObserver(container, (w, h) => {
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+    });
   }
 
   private buildLevel() {
@@ -169,9 +216,8 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     if (this.activeKeys.has('ArrowDown') || this.activeKeys.has('s')) this.posZ += speed;
 
     // Jump Logic
-    if (this.activeKeys.has(' ') && this.isGrounded) {
-      this.velY = 0.25;
-      this.isGrounded = false;
+    if (this.activeKeys.has(' ')) {
+      this.jump();
     }
 
     // Gravity
@@ -187,6 +233,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     // Fall death check
     if (this.posY < -5) {
       this.gameOver.set(true);
+      this.audioService.playExplosionSound();
     }
 
     this.playerMesh.position.set(this.posX, this.posY, this.posZ);
@@ -196,10 +243,11 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     this.camera.lookAt(this.posX, this.posY, this.posZ);
 
     // Coin collection
-    this.coinsMeshes.forEach((coin, idx) => {
+    this.coinsMeshes.forEach((coin) => {
       if (coin.visible && Math.hypot(coin.position.x - this.posX, coin.position.z - this.posZ) < 0.8) {
         coin.visible = false;
         this.coins.update(c => c + 1);
+        this.audioService.playCoinSound();
       }
     });
   }

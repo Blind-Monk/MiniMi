@@ -1,10 +1,11 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import { TextureGenerator } from '../../../core/utils/texture-generator';
 import { CAR_ROSTER, TRACK_ROSTER, CarData, TrackData } from './turbo-speed-data';
-import { TurboSpeedAudioEngine } from './turbo-speed-audio';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 interface PlayerConfig {
   id: number;
@@ -58,6 +59,8 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('showcaseCanvas') showcaseCanvasRef?: ElementRef<HTMLCanvasElement>;
 
+  private audioService = inject(AudioService);
+
   // Game UI State Signals
   activeView = signal<'main-menu' | 'showcase' | 'race-setup' | 'racing' | 'tournament-standings' | 'cheat-modal'>('main-menu');
   selectedCarIndex = signal<number>(0);
@@ -79,6 +82,12 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   radarDistance = signal<number>(0);
   policeChatterText = signal<string>('');
 
+  // Mobile Touch Steering States
+  touchAccel = signal<boolean>(false);
+  touchBrake = signal<boolean>(false);
+  touchSteerLeft = signal<boolean>(false);
+  touchSteerRight = signal<boolean>(false);
+
   // Tournament State
   tournamentPoints = signal<{ [carId: string]: number }>({});
   tournamentRound = signal<number>(1);
@@ -87,8 +96,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   cheatInput = signal<string>('');
   cheatMessage = signal<string>('');
 
-  // Audio Engine
-  audioEngine = new TurboSpeedAudioEngine();
   isMuted = signal<boolean>(false);
 
   // Roster lists
@@ -126,7 +133,8 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.asphaltTexture = TextureGenerator.createAsphaltTexture();
     this.grassTexture = TextureGenerator.createGrassTexture();
-    this.audioEngine.startMusic();
+    this.audioService.startPlaylist('high-energy');
+    this.isMuted.set(this.audioService.getMuted());
   }
 
   filteredCarRoster(): CarData[] {
@@ -144,7 +152,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   // --- View Navigation & Sound ---
   playClick() {
-    this.audioEngine.playMenuClick();
+    this.audioService.playClickSound();
   }
 
   playIntroCinematic() {
@@ -158,7 +166,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   toggleMute() {
-    const muted = this.audioEngine.toggleMute();
+    const muted = this.audioService.toggleMute();
     this.isMuted.set(muted);
   }
 
@@ -242,11 +250,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   testEngineSound() {
-    this.audioEngine.startEngineSound();
-    this.audioEngine.updateEngineRPM(0.9, 4);
-    setTimeout(() => {
-      this.audioEngine.stopEngineSound();
-    }, 1500);
+    this.audioService.playBoingSound();
   }
 
   // --- 3D Showcase Section ---
@@ -261,7 +265,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     this.showcaseRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.showcaseRenderer.setSize(width, height);
-    this.showcaseRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.showcaseRenderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
     const amb = new THREE.AmbientLight(0xffffff, 0.9);
     this.showcaseScene.add(amb);
@@ -332,12 +336,11 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const timer = setInterval(() => {
       if (idx < steps.length) {
         this.countdownText.set(steps[idx]);
-        this.audioEngine.playCountdownTone(idx === steps.length - 1);
+        this.audioService.playCoinSound();
         idx++;
       } else {
         this.countdownText.set('');
         clearInterval(timer);
-        this.audioEngine.startEngineSound();
         this.startRaceLoop();
       }
     }, 800);
@@ -353,9 +356,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   exitToMenu() {
     this.playClick();
     cancelAnimationFrame(this.animFrameId);
-    this.audioEngine.stopEngineSound();
-    this.audioEngine.stopPoliceSiren();
-    this.audioEngine.startMusic();
+    this.audioService.startPlaylist('high-energy');
     this.activeView.set('main-menu');
   }
 
@@ -365,16 +366,9 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
   toggleFullscreen() {
     if (!this.containerRef) return;
-    const elem = this.containerRef.nativeElement;
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().then(() => {
-        setTimeout(() => this.onWindowResize(), 100);
-      }).catch(err => console.error(err));
-    } else {
-      document.exitFullscreen().then(() => {
-        setTimeout(() => this.onWindowResize(), 100);
-      }).catch(err => console.error(err));
-    }
+    ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement).then(() => {
+      setTimeout(() => this.onWindowResize(), 100);
+    }).catch(err => console.error(err));
   }
 
   @HostListener('window:resize')
@@ -404,7 +398,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
     this.renderer.setScissorTest(true);
 
     this.ambLight = new THREE.AmbientLight(0xffffff, track.ambientLight);
@@ -674,7 +668,6 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
       };
       this.updateCarSplineTransform(copState);
       this.copCars.push(copState);
-      this.audioEngine.startPoliceSiren();
       this.policeChatterText.set('Dispatch: Unit 12 in pursuit of speeder on sector 1!');
     }
   }
@@ -797,17 +790,24 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         let leftInput = false;
         let rightInput = false;
 
+        if (idx === 0) {
+          accelInput = accelInput || this.touchAccel();
+          brakeInput = brakeInput || this.touchBrake();
+          leftInput = leftInput || this.touchSteerLeft();
+          rightInput = rightInput || this.touchSteerRight();
+        }
+
         if (cfg.useGamepad && gamepads[cfg.gamepadIndex]) {
           const gp = gamepads[cfg.gamepadIndex]!;
-          accelInput = gp.buttons[0]?.pressed || gp.axes[1] < -0.2;
-          brakeInput = gp.buttons[1]?.pressed || gp.axes[1] > 0.2;
-          leftInput = gp.axes[0] < -0.2;
-          rightInput = gp.axes[0] > 0.2;
+          accelInput = accelInput || gp.buttons[0]?.pressed || gp.axes[1] < -0.2;
+          brakeInput = brakeInput || gp.buttons[1]?.pressed || gp.axes[1] > 0.2;
+          leftInput = leftInput || gp.axes[0] < -0.2;
+          rightInput = rightInput || gp.axes[0] > 0.2;
         } else {
-          accelInput = this.activeKeys.has(cfg.keys.up);
-          brakeInput = this.activeKeys.has(cfg.keys.down);
-          leftInput = this.activeKeys.has(cfg.keys.left);
-          rightInput = this.activeKeys.has(cfg.keys.right);
+          accelInput = accelInput || this.activeKeys.has(cfg.keys.up);
+          brakeInput = brakeInput || this.activeKeys.has(cfg.keys.down);
+          leftInput = leftInput || this.activeKeys.has(cfg.keys.left);
+          rightInput = rightInput || this.activeKeys.has(cfg.keys.right);
         }
 
         if (accelInput) {
@@ -837,15 +837,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
           car.steeringAngle = THREE.MathUtils.lerp(car.steeringAngle, 0, 0.1);
         }
 
-        const oldGear = car.gear;
         car.gear = Math.min(6, Math.max(1, Math.floor(Math.abs(car.speed) / (car.maxSpeed / 5)) + 1));
-        if (car.gear !== oldGear && idx === 0) {
-          this.audioEngine.playGearShift();
-        }
-
-        if (idx === 0) {
-          this.audioEngine.updateEngineRPM(car.speed / car.maxSpeed, car.gear);
-        }
       } else {
         car.speed = car.maxSpeed * 0.88;
       }
@@ -885,7 +877,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
         this.radarDistance.set(Math.round(dist));
 
         if (dist < 5) {
-          this.audioEngine.playCollision();
+          this.audioService.playExplosionSound();
         }
 
         cop.laneOffset = THREE.MathUtils.lerp(cop.laneOffset, pCar.laneOffset, 0.05);
@@ -919,8 +911,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   private handleRaceFinish(winningCar: CarState, pIdx: number) {
     const winnerName = winningCar.isAI ? `AI Driver (${winningCar.data.name})` : `PLAYER ${pIdx + 1}`;
     this.raceWinner.set(winnerName);
-    this.audioEngine.stopEngineSound();
-    this.audioEngine.stopPoliceSiren();
+    this.audioService.playCoinSound();
 
     if (this.gameMode() === 'tournament') {
       const pts = { ...this.tournamentPoints() };
@@ -1040,8 +1031,5 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     cancelAnimationFrame(this.showcaseAnimId);
     if (this.renderer) this.renderer.dispose();
     if (this.showcaseRenderer) this.showcaseRenderer.dispose();
-    this.audioEngine.stopEngineSound();
-    this.audioEngine.stopPoliceSiren();
-    this.audioEngine.stopMusic();
   }
 }

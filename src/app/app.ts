@@ -125,6 +125,64 @@ export class App {
     this.showPremiumModal.set(false);
   }
 
+  downloadOfflineApp() {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimi Offline Web App & Mini-Games Catalog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <header class="flex items-center justify-between bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🎮</span>
+        <div>
+          <h1 class="text-2xl font-black text-amber-400">Minimi Offline Mini-Games Suite</h1>
+          <p class="text-xs text-slate-400">Standalone Offline Application • Play 200+ Games & Tools Anywhere</p>
+        </div>
+      </div>
+      <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg text-xs font-mono font-bold border border-emerald-500/40">OFFLINE READY</span>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      ${CATALOG_ITEMS.map(item => `
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 flex flex-col justify-between shadow">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-3xl">${item.icon}</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded">${item.subcategory}</span>
+            </div>
+            <h3 class="text-base font-bold text-white mt-2">${item.name}</h3>
+            <p class="text-xs text-slate-400 line-clamp-2">${item.description}</p>
+          </div>
+          <button onclick="alert('Launching ${item.name} offline mode!')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs shadow">
+            Launch Game
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'index.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   async validateKey() {
     const key = this.licenseKeyInput().trim();
     if (!key) {

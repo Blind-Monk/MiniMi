@@ -1,13 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-snakes-ladders',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans select-none">
 
       <!-- Top HUD Header -->
       <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -20,10 +22,13 @@ import * as THREE from 'three';
         </div>
 
         <div class="flex items-center gap-3">
+          <button (click)="toggleFullscreen()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 font-bold">
+            ⛶
+          </button>
           <button (click)="rollDice()" [disabled]="isRolling() || winner() !== null" class="px-5 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-black rounded-xl shadow-lg disabled:opacity-40 hover:scale-105 transition-all">
             🎲 Roll Dice ({{ diceValue() }})
           </button>
-          <button (click)="restartGame()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs font-bold">
+          <button (click)="restartGame()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs font-bold">
             🔄 Reset
           </button>
         </div>
@@ -40,7 +45,7 @@ import * as THREE from 'three';
         <canvas #canvas class="w-full h-full block"></canvas>
 
         @if (winner()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center">
+          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center z-20">
             <span class="text-5xl">🏆</span>
             <h2 class="text-3xl font-black text-amber-400">{{ winner() }} WON THE GAME!</h2>
             <button (click)="restartGame()" class="px-6 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-black rounded-xl shadow-lg">
@@ -55,6 +60,8 @@ import * as THREE from 'three';
 export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
 
   p1Tile = signal<number>(1);
   p2Tile = signal<number>(1);
@@ -75,13 +82,21 @@ export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
   private snakes: Record<number, number> = { 17: 7, 54: 34, 62: 19, 64: 60, 87: 24, 93: 73, 99: 78 };
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('funny-quirky');
     this.initThreeJS();
     this.buildBoard();
     this.setupTokens();
     this.startLoop();
   }
 
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
+  }
+
   restartGame() {
+    this.audioService.playClickSound();
     this.p1Tile.set(1);
     this.p2Tile.set(1);
     this.turn.set(0);
@@ -96,6 +111,7 @@ export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
     let rollCount = 0;
     const interval = setInterval(() => {
       this.diceValue.set(Math.floor(Math.random() * 6) + 1);
+      this.audioService.playClickSound();
       rollCount++;
       if (rollCount > 10) {
         clearInterval(interval);
@@ -113,14 +129,22 @@ export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
     if (nextTile > 100) nextTile = currentSig(); // Must land exactly on 100
 
     // Snake / Ladder check
-    if (this.ladders[nextTile]) nextTile = this.ladders[nextTile];
-    else if (this.snakes[nextTile]) nextTile = this.snakes[nextTile];
+    if (this.ladders[nextTile]) {
+      nextTile = this.ladders[nextTile];
+      this.audioService.playBoingSound();
+    } else if (this.snakes[nextTile]) {
+      nextTile = this.snakes[nextTile];
+      this.audioService.playExplosionSound();
+    } else {
+      this.audioService.playClickSound();
+    }
 
     currentSig.set(nextTile);
     this.updateTokenPositions();
 
     if (nextTile === 100) {
       this.winner.set(isP1 ? 'PLAYER 1' : 'PLAYER 2 (AI)');
+      this.audioService.playCoinSound();
       return;
     }
 
@@ -146,9 +170,16 @@ export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
     const amb = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(amb);
+
+    ResponsiveUtil.setupCanvasResizeObserver(container, (w, h) => {
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+    });
   }
 
   private buildBoard() {

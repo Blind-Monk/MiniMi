@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
@@ -6,7 +6,8 @@ import { ChessPieceBuilder } from './chess-piece-builder';
 import { ChessEnvironmentBuilder, BoardTheme } from './chess-environment-builder';
 import { ChessRulesEngine, Move, PieceColor, PieceType } from './chess-rules-engine';
 import { ChessAI, AIDifficulty } from './chess-ai';
-import { ChessAudioService } from './chess-audio.service';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' | 'leaderboard' | 'credits' | 'game';
 
@@ -15,7 +16,7 @@ export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' |
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-6xl mx-auto space-y-4 shadow-2xl font-sans relative overflow-hidden">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-6xl mx-auto space-y-4 shadow-2xl font-sans relative overflow-hidden select-none">
 
       <!-- Screen 1: Title Screen -->
       @if (currentScreen() === 'title') {
@@ -26,7 +27,7 @@ export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' |
               3D BATTLE CHESS
             </h1>
             <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-              Reimagined 3D Chess with stylized character coins, dynamic particle battle animations, and Minimax AI.
+              Reimagined 3D Chess with stylized character coins, dynamic particle battle animations, Lofi soundtrack, and Minimax AI.
             </p>
           </div>
 
@@ -159,16 +160,6 @@ export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' |
           </div>
 
           <div class="space-y-4 text-xs">
-            <div>
-              <label class="block text-slate-400 mb-1">Master Volume: {{ masterVol() }}%</label>
-              <input type="range" min="0" max="100" [ngModel]="masterVol()" (ngModelChange)="updateMasterVol($event)" class="w-full accent-amber-500">
-            </div>
-
-            <div>
-              <label class="block text-slate-400 mb-1">Sound Effects (SFX): {{ sfxVol() }}%</label>
-              <input type="range" min="0" max="100" [ngModel]="sfxVol()" (ngModelChange)="updateSfxVol($event)" class="w-full accent-indigo-500">
-            </div>
-
             <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl border border-slate-700">
               <span>Show Legal Move Hints</span>
               <input type="checkbox" [ngModel]="showHints()" (ngModelChange)="showHints.set($event)" class="w-4 h-4 accent-amber-500">
@@ -292,13 +283,16 @@ export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' |
           </div>
 
           <div class="flex items-center gap-2">
+            <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold border border-slate-700">
+              ⛶
+            </button>
             <button (click)="restartGame()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg font-bold text-slate-950 shadow">
               🔄 New Match
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div #gameContainer class="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <!-- 3D Canvas Viewport -->
           <div class="lg:col-span-3 relative aspect-[16/9] min-h-[420px] max-h-[580px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center">
             <canvas #canvas class="w-full h-full block cursor-pointer"></canvas>
@@ -365,6 +359,9 @@ export type ScreenState = 'title' | 'menu' | 'setup' | 'settings' | 'tutorial' |
 })
 export class Chess3dComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('gameContainer') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
 
   readonly difficultyOptions: AIDifficulty[] = ['easy', 'medium', 'hard', 'grandmaster'];
   readonly themeOptions: BoardTheme[] = ['marble', 'battlefield', 'arcane', 'classic'];
@@ -375,8 +372,6 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   playerColor = signal<PieceColor>('w');
   selectedTheme = signal<BoardTheme>('marble');
 
-  masterVol = signal<number>(80);
-  sfxVol = signal<number>(80);
   showHints = signal<boolean>(true);
   enableBattleAnims = signal<boolean>(true);
 
@@ -392,7 +387,6 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   pendingPromotion = signal<Move | null>(null);
 
   private rulesEngine = new ChessRulesEngine();
-  private audioService = new ChessAudioService();
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -415,15 +409,23 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
   private cameraDistance = 11;
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('chill-lofi');
     if (this.currentScreen() === 'game') {
       setTimeout(() => this.initGameScene(), 50);
     }
   }
 
   navigateTo(screen: ScreenState) {
+    this.audioService.playClickSound();
     this.currentScreen.set(screen);
     if (screen === 'game') {
       setTimeout(() => this.initGameScene(), 50);
+    }
+  }
+
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
     }
   }
 
@@ -438,17 +440,8 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
     this.navigateTo('game');
   }
 
-  updateMasterVol(v: number) {
-    this.masterVol.set(v);
-    this.audioService.masterVolume = v / 100;
-  }
-
-  updateSfxVol(v: number) {
-    this.sfxVol.set(v);
-    this.audioService.sfxVolume = v / 100;
-  }
-
   restartGame() {
+    this.audioService.playClickSound();
     this.rulesEngine.resetBoard();
     this.currentTurn.set('w');
     this.statusMessage.set(null);
@@ -476,7 +469,7 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
     this.renderer.shadowMap.enabled = true;
 
     ChessEnvironmentBuilder.setupLighting(this.scene, this.selectedTheme());
@@ -710,9 +703,9 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
     if (!success) return;
 
     if (move.capturedPiece) {
-      this.audioService.playCaptureSound();
+      this.audioService.playExplosionSound();
     } else {
-      this.audioService.playMoveSound();
+      this.audioService.playClickSound();
     }
 
     if (move.capturedPiece) {
@@ -733,7 +726,7 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
 
     if (this.rulesEngine.isCheckmate(nextTurn)) {
       this.statusMessage.set(`CHECKMATE! ${this.currentTurn() === 'w' ? 'Black' : 'White'} Wins!`);
-      this.audioService.playVictorySound();
+      this.audioService.playCoinSound();
       this.matchesPlayed.update(m => m + 1);
       this.checkmates.update(c => c + 1);
       if (this.vsAI() && this.currentTurn() !== this.playerColor()) {
@@ -745,7 +738,6 @@ export class Chess3dComponent implements AfterViewInit, OnDestroy {
       return;
     } else if (this.rulesEngine.isKingInCheck(nextTurn)) {
       this.statusMessage.set('CHECK!');
-      this.audioService.playCheckSound();
       setTimeout(() => this.statusMessage.set(null), 1500);
     }
 

@@ -1,13 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-city-sprint',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans select-none">
 
       <!-- Top HUD Header -->
       <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -21,6 +23,9 @@ import * as THREE from 'three';
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-teal-400 text-sm">⭐ Stunt Score: {{ score() }}</div>
+          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
+            ⛶
+          </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
           </button>
@@ -34,6 +39,15 @@ import * as THREE from 'three';
         <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300 pointer-events-none">
           🎮 Controls: WASD to Run • Spacebar to Jump Across Rooftops
         </div>
+
+        <!-- Touch Controls for Mobile Devices -->
+        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
+          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-amber-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-amber-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-amber-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-amber-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
+          <button (click)="jump()" class="w-14 h-12 bg-amber-600 active:bg-amber-500 text-white font-black rounded-xl shadow-lg border border-amber-400">🦘</button>
+        </div>
       </div>
     </div>
   `
@@ -41,6 +55,8 @@ import * as THREE from 'three';
 export class CitySprintComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
 
   score = signal<number>(0);
 
@@ -59,18 +75,43 @@ export class CitySprintComponent implements AfterViewInit, OnDestroy {
   private animFrameId: number = 0;
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('high-energy');
     this.initThreeJS();
     this.buildCity();
     this.startLoop();
   }
 
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
+  }
+
   restartGame() {
+    this.audioService.playClickSound();
     this.score.set(0);
     this.posX = 0;
     this.posY = 2;
     this.posZ = 0;
     this.velY = 0;
     this.isGrounded = true;
+  }
+
+  jump() {
+    if (this.isGrounded) {
+      this.velY = 0.3;
+      this.isGrounded = false;
+      this.score.update(s => s + 50);
+      this.audioService.playJumpSound();
+    }
+  }
+
+  movePlayer(dir: string) {
+    const speed = 0.4;
+    if (dir === 'w') this.posZ -= speed;
+    if (dir === 's') this.posZ += speed;
+    if (dir === 'a') this.posX -= speed;
+    if (dir === 'd') this.posX += speed;
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -95,6 +136,7 @@ export class CitySprintComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
     const amb = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(amb);
@@ -108,6 +150,12 @@ export class CitySprintComponent implements AfterViewInit, OnDestroy {
     const pMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
     this.playerMesh = new THREE.Mesh(pGeo, pMat);
     this.scene.add(this.playerMesh);
+
+    ResponsiveUtil.setupCanvasResizeObserver(container, (w, h) => {
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+    });
   }
 
   private buildCity() {
@@ -139,10 +187,8 @@ export class CitySprintComponent implements AfterViewInit, OnDestroy {
     if (this.activeKeys.has('a') || this.activeKeys.has('ArrowLeft')) this.posX -= speed;
     if (this.activeKeys.has('d') || this.activeKeys.has('ArrowRight')) this.posX += speed;
 
-    if (this.activeKeys.has(' ') && this.isGrounded) {
-      this.velY = 0.3;
-      this.isGrounded = false;
-      this.score.update(s => s + 50);
+    if (this.activeKeys.has(' ')) {
+      this.jump();
     }
 
     this.posY += this.velY;

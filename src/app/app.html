@@ -35,8 +35,15 @@
       </button>
     </div>
 
-    <!-- Right Actions: Get Premium Access & Search -->
+    <!-- Right Actions: Download Offline App & Search -->
     <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+      <button
+        (click)="downloadOfflineApp()"
+        class="px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] sm:text-xs rounded-lg shadow-md transition-all flex items-center space-x-1">
+        <span>📥</span>
+        <span class="hidden sm:inline">Download App (HTML)</span>
+      </button>
+
       <button
         (click)="openPremiumModal()"
         class="px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[11px] sm:text-xs rounded-lg shadow-md transition-all flex items-center space-x-1">
@@ -220,9 +227,13 @@
   <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto px-4 gap-2">
     <p>Minimi Front-End Web Application • Open Source MIT License • Built with Angular & Tailwind CSS</p>
     <div class="flex items-center space-x-4">
+      <button (click)="downloadOfflineApp()" class="text-indigo-400 hover:text-indigo-300 font-mono font-semibold flex items-center space-x-1">
+        <span>📥</span>
+        <span>Download Offline App (index.html)</span>
+      </button>
       <a href="docs/API_Documentation.pdf" download target="_blank" class="text-indigo-400 hover:text-indigo-300 font-mono font-semibold flex items-center space-x-1">
         <span>📄</span>
-        <span>Download API Docs (PDF)</span>
+        <span>API Docs (PDF)</span>
       </a>
       <button (click)="openPremiumModal()" class="text-amber-400 hover:text-amber-300 font-semibold">
         💎 Get Premium Key
