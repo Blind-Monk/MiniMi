@@ -31,3 +31,13 @@ main.js             | main  |  2.09 MB |
 Application bundle generation complete. [5.530 seconds] - 2026-10-23T11:46:05.080Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [7.641 seconds] - 2026-10-23T12:28:09.618Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/design-tools/svg-blob.component.ts:93:40:
+[37m      93 │             <textarea readonly [value]="[32mfullSvgCode[37m()"
+         ╵                                         [32m~~~~~~~~~~~[0m
