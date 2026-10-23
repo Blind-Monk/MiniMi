@@ -139,25 +139,14 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     audioPlaylist: 'chill-lofi'
   },
   {
-    id: 'blockfall',
-    name: 'Blockfall (Tetris)',
-    category: 'games',
-    subcategory: 'Arcade',
-    description: 'Classic polyomino block stacking game with line clears, hold box, ghost preview, retro chiptune audio, and virtual mobile D-pad.',
-    icon: '🧱',
-    tags: ['Arcade', 'Blocks', 'Retro', 'Chiptune Audio'],
-    isPopular: false,
-    audioPlaylist: 'arcade-retro'
-  },
-  {
     id: 'maze-muncher',
-    name: 'Maze Muncher',
+    name: 'Maze Muncher (Pac-Man Style)',
     category: 'games',
     subcategory: 'Arcade',
-    description: 'Navigate the maze, eat all dots, avoid 4 ghost AI chasers with touch D-pad, fullscreen mode, and non-repeating arcade audio.',
+    description: 'Authentic Pac-Man clone with 28x31 classic maze, 4 ghost personalities (Blinky, Pinky, Inky, Clyde), frightened mode, and fruit bonuses.',
     icon: '🟡',
-    tags: ['Arcade', 'Retro', 'Maze', 'Chiptune Audio'],
-    isPopular: false,
+    tags: ['Arcade', 'Retro', 'PacMan', 'Ghost AI', 'Chiptune Audio', 'Popular'],
+    isPopular: true,
     audioPlaylist: 'arcade-retro'
   },
 

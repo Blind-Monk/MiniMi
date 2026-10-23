@@ -89,3 +89,113 @@ main.js             | main  |  1.05 MB |
 Application bundle generation complete. [3.699 seconds] - 2026-10-23T14:46:36.361Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  1.06 MB |
+
+Application bundle generation complete. [1.933 seconds] - 2026-10-23T15:01:21.596Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [2.001 seconds] - 2026-10-23T15:02:32.241Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/games/blockfall/blockfall.component"[0m
+
+    src/app/app.ts:19:35:
+[37m      19 │ ...Component } from [32m'./features/games/blockfall/blockfall.component'[37m;
+         ╵                     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/games/blockfall/blockfall.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:20:35:
+[37m      20 │ ...Component } from [32m'./features/games/blockfall/blockfall.component'[37m;
+         ╵                     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG1010: 'imports' must be an array of components, directives, pipes, or NgModules.
+  Value could not be determined statically.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:53:4:
+[37m      53 │     [32mBlockfallComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~[0m
+
+  Unknown reference.
+
+    src/app/app.ts:53:4:
+[37m      53 │     [32mBlockfallComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.559 seconds] - 2026-10-23T15:03:44.095Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "./features/games/blockfall/blockfall.component"[0m
+
+    src/app/app.ts:19:35:
+[37m      19 │ ...Component } from [32m'./features/games/blockfall/blockfall.component'[37m;
+         ╵                     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot find module './features/games/blockfall/blockfall.component' or its corresponding type declarations.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:20:35:
+[37m      20 │ ...Component } from [32m'./features/games/blockfall/blockfall.component'[37m;
+         ╵                     [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG1010: 'imports' must be an array of components, directives, pipes, or NgModules.
+  Value could not be determined statically.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:53:4:
+[37m      53 │     [32mBlockfallComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~[0m
+
+  Unknown reference.
+
+    src/app/app.ts:53:4:
+[37m      53 │     [32mBlockfallComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.673 seconds] - 2026-10-23T15:03:57.442Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'app-blockfall' is not a known element:
+1. If 'app-blockfall' is an Angular component, then verify that it is included in the '@Component.imports' of this component.
+2. If 'app-blockfall' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.html:169:34:
+[37m      169 │             @case ('blockfall') { [32m<app-blockfall />[37m }
+          ╵                                   [32m~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component App.
+
+    src/app/app.ts:64:15:
+[37m      64 │   templateUrl: [32m'./app.html'[37m,
+         ╵                [32m~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  1.03 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  1.05 MB
+
+Application bundle generation complete. [0.977 seconds] - 2026-10-23T15:04:17.539Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  1.03 MB |
+
+Application bundle generation complete. [0.881 seconds] - 2026-10-23T15:05:49.149Z
+
+Page reload sent to client(s).

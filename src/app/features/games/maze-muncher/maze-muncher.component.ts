@@ -3,16 +3,17 @@ import { CommonModule } from '@angular/common';
 import { AudioService } from '../../../core/services/audio.service';
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'NONE';
+type GhostMode = 'CHASE' | 'SCATTER' | 'FRIGHTENED' | 'EATEN';
 
 interface Ghost {
-  id: string;
+  id: 'blinky' | 'pinky' | 'inky' | 'clyde';
   name: string;
   emoji: string;
   frightenedEmoji: string;
   color: string;
   gridX: number;
   gridY: number;
-  subX: number; // 0.0 to 1.0 within tile
+  subX: number; // -0.5 to 0.5 tile offset
   subY: number;
   dir: Direction;
   targetX: number;
@@ -21,95 +22,49 @@ interface Ghost {
   homeY: number;
   scatterX: number;
   scatterY: number;
-  isFrightened: boolean;
-  isEaten: boolean;
+  mode: GhostMode;
   speed: number;
+  exitTimer: number; // Seconds until exiting ghost house
 }
 
-interface LevelConfig {
-  id: number;
-  name: string;
-  difficulty: 'SIMPLE' | 'MEDIUM' | 'COMPLEX' | 'EXTREME';
-  grid: number[][]; // 0: path, 1: wall, 2: dot, 3: power pellet, 4: door, 5: fruit
-  ghostSpeed: number;
-  frightenedDuration: number;
-}
+const COLS = 28;
+const ROWS = 31;
+const TILE_SIZE = 20; // 28 x 31 tiles = 560 x 620 px canvas
 
-const TILE_SIZE = 30; // 19 cols x 21 rows = 570 x 630 px canvas
-
-// 0: Simple Warm-Up (Wide open paths, low obstacles)
-const MAZE_SIMPLE: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,1],
-  [1,2,1,1,0,0,0,0,2,1,2,0,0,0,0,1,1,2,1],
-  [1,2,1,1,0,0,0,0,2,1,2,0,0,0,0,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,0,0,1,1,1,1,1,0,0,2,1,1,2,1],
-  [1,2,2,2,2,0,0,2,2,1,2,2,0,0,2,2,2,2,1],
-  [1,1,1,1,2,0,0,1,0,1,0,1,0,0,2,1,1,1,1],
-  [0,0,0,1,2,0,0,0,0,0,0,0,0,0,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,0,0,0,0,5,0,0,0,0,2,1,0,0,0],
-  [1,1,1,1,2,0,0,1,1,1,1,1,0,0,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,0,0,0,2,1,2,0,0,0,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,0,0,1,1,1,1,1,0,0,2,1,2,1,1],
-  [1,2,2,2,2,0,0,2,2,1,2,2,0,0,2,2,2,2,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-// 1: Classic Arena
-const MAZE_LEVEL_1: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,3,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,4,1,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,1,0,0,0,5,0,0,0,1,2,1,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-// 2: Complex Labyrinth (Tight passages, heavy walls, dead ends)
-const MAZE_COMPLEX: number[][] = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,3,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,1],
-  [1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,1],
-  [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,2,1,2,2,2,2,1,2,2,2,1,2,2,2,2,1,2,1],
-  [1,2,1,2,1,1,2,1,1,1,1,1,2,1,1,2,1,2,1],
-  [1,2,2,2,1,1,2,1,0,0,0,1,2,1,1,2,2,2,1],
-  [0,0,0,1,1,1,2,1,0,0,0,1,2,1,1,1,0,0,0],
-  [1,1,1,1,2,2,2,1,1,4,1,1,2,2,2,1,1,1,1],
-  [0,0,0,0,2,1,0,1,4,4,4,1,0,1,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-  [0,0,0,1,2,1,2,0,0,5,0,0,2,1,2,1,0,0,0],
-  [1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,1,1],
-  [1,2,2,2,2,2,2,1,2,1,2,1,2,2,2,2,2,2,1],
-  [1,2,1,1,1,1,2,1,2,1,2,1,2,1,1,1,1,2,1],
-  [1,3,2,2,2,1,2,2,2,0,2,2,2,1,2,2,2,3,1],
-  [1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1],
-  [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-  [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+// Official Arcade Pac-Man Grid Layout (28 cols x 31 rows)
+// 0: empty path, 1: solid wall, 2: dot, 3: power pellet, 4: ghost house door, 5: fruit spot
+const CLASSIC_PACMAN_GRID: number[][] = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,3,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,3,1],
+  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1],
+  [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1],
+  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+  [1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1],
+  [0,0,0,0,0,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,0,0,0,0,0],
+  [0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0],
+  [0,0,0,0,0,1,2,1,1,0,1,1,1,4,4,1,1,1,0,1,1,2,1,0,0,0,0,0],
+  [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+  [0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0], // Tunnel Row 14
+  [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
+  [0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0],
+  [0,0,0,0,0,1,2,1,1,0,0,0,0,5,0,0,0,0,0,1,1,2,1,0,0,0,0,0],
+  [0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0],
+  [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+  [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
+  [1,3,2,2,1,1,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,1,1,2,2,3,1],
+  [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1],
+  [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1],
+  [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
 @Component({
@@ -124,8 +79,8 @@ const MAZE_COMPLEX: number[][] = [
         <div class="flex items-center space-x-3">
           <span class="text-3xl animate-bounce">🟡</span>
           <div>
-            <h2 class="text-xl font-black text-amber-400 tracking-wider">MAZE MUNCHER</h2>
-            <p class="text-xs text-slate-400">Simple & Complex Levels • Emoji Caricature Ghosts</p>
+            <h2 class="text-xl font-black text-amber-400 tracking-wider">PAC-MAN MAZE MUNCHER</h2>
+            <p class="text-xs text-slate-400">Authentic 28x31 Maze • Blinky, Pinky, Inky & Clyde AI</p>
           </div>
         </div>
 
@@ -145,62 +100,41 @@ const MAZE_COMPLEX: number[][] = [
       <!-- Main Game Arena -->
       <div class="relative bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col items-center justify-center overflow-hidden">
 
-        <!-- Live Level Status -->
+        <!-- Live Status Bar -->
         <div *ngIf="gameState() === 'PLAYING' || gameState() === 'PAUSED'" class="w-full flex items-center justify-between px-2 pb-3 text-xs font-mono text-slate-300">
           <div class="flex items-center space-x-1">
             <span>Lives:</span>
             <span *ngFor="let life of getLivesArray()" class="text-amber-400 text-lg">🟡</span>
           </div>
           <div class="text-amber-300 font-bold text-sm">
-            Maze {{ currentLevelIndex() + 1 }}: {{ getCurrentLevelName() }}
-            <span class="text-[10px] px-2 py-0.5 rounded ml-1 uppercase" [ngClass]="getDifficultyBadgeClass(getCurrentLevelDifficulty())">
-              {{ getCurrentLevelDifficulty() }}
-            </span>
+            Level {{ level() }}: Arcade Mode
           </div>
           <div class="text-cyan-300">
             Dots Left: <strong>{{ remainingPellets() }}</strong>
           </div>
         </div>
 
-        <!-- Canvas Display (570 x 630 px Big Mode) -->
-        <canvas #gameCanvas width="570" height="630" class="bg-slate-950 rounded-xl border-2 border-indigo-900/60 shadow-2xl max-w-full">
+        <!-- Canvas Display (560 x 620 px Arcade Ratio) -->
+        <canvas #gameCanvas width="560" height="620" class="bg-slate-950 rounded-xl border-2 border-indigo-900/60 shadow-2xl max-w-full">
         </canvas>
 
-        <!-- Overlay 1: MAIN MENU & MAZE SELECTOR -->
-        <div *ngIf="gameState() === 'MENU'" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <!-- Overlay 1: MAIN MENU -->
+        <div *ngIf="gameState() === 'MENU'" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4 z-20">
           <span class="text-6xl mb-1 animate-pulse">🟡 👻 🤡 👾 👺</span>
-          <h1 class="text-3xl font-black text-amber-400 tracking-wider">MAZE MUNCHER</h1>
+          <h1 class="text-3xl font-black text-amber-400 tracking-wider">PAC-MAN CLONE</h1>
           <p class="text-xs text-slate-300 max-w-md leading-relaxed">
-            Choose from <strong>Simple Warm-Up</strong> mazes to <strong>Ultra Complex Labyrinths</strong>!
+            Classic 28×31 arcade tilemap! Outsmart all 4 ghosts:
+            <br>🔴 <strong>Blinky:</strong> Direct Chaser | 🩷 <strong>Pinky:</strong> Ambush Target
+            <br>🩵 <strong>Inky:</strong> Vector Flanker | 🟠 <strong>Clyde:</strong> Shy Roamer
           </p>
 
-          <div class="w-full max-w-md bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-            <span class="text-xs font-bold text-amber-300 uppercase tracking-widest block">Select Maze Layout & Difficulty:</span>
-            <div class="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto p-1">
-              <button *ngFor="let lvl of levels; let i = index" (click)="startGame(i)" class="p-2 bg-slate-800 hover:bg-indigo-900 border border-slate-700 hover:border-indigo-500 rounded-lg flex items-center justify-between text-left text-xs transition">
-                <div class="flex items-center space-x-2">
-                  <span class="font-bold text-white">Maze {{ i + 1 }}: {{ lvl.name }}</span>
-                  <span class="text-[9px] px-2 py-0.5 rounded font-mono uppercase" [ngClass]="getDifficultyBadgeClass(lvl.difficulty)">
-                    {{ lvl.difficulty }}
-                  </span>
-                </div>
-                <span class="text-amber-400 font-mono">Play ➔</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="flex space-x-3">
-            <button (click)="startGame(0)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">
-              🌱 Simple Level
-            </button>
-            <button (click)="startGame(2)" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow">
-              🔥 Complex Level
-            </button>
-          </div>
+          <button (click)="startGame()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl text-sm shadow-xl transform active:scale-95 transition">
+            🎮 PLAY PAC-MAN
+          </button>
         </div>
 
         <!-- Overlay 2: PAUSED -->
-        <div *ngIf="gameState() === 'PAUSED'" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-3">
+        <div *ngIf="gameState() === 'PAUSED'" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-20">
           <h2 class="text-3xl font-black text-amber-400">GAME PAUSED</h2>
           <div class="flex flex-col space-y-2 w-44">
             <button (click)="togglePause()" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">
@@ -213,23 +147,23 @@ const MAZE_COMPLEX: number[][] = [
         </div>
 
         <!-- Overlay 3: LEVEL COMPLETE -->
-        <div *ngIf="gameState() === 'LEVEL_COMPLETE'" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
-          <span class="text-6xl animate-bounce">🎉</span>
+        <div *ngIf="gameState() === 'LEVEL_COMPLETE'" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4 z-20">
+          <span class="text-6xl animate-bounce">🍒</span>
           <h2 class="text-3xl font-black text-emerald-400">LEVEL CLEAR!</h2>
-          <p class="text-xs text-slate-300">All dots devoured without clipping walls!</p>
+          <p class="text-xs text-slate-300">All dots eaten! Next level speed increase!</p>
           <button (click)="nextLevel()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-sm shadow-lg">
-            {{ currentLevelIndex() < levels.length - 1 ? 'Next Maze ➔' : '🏆 Master Victory!' }}
+            Start Level {{ level() + 1 }} ➔
           </button>
         </div>
 
         <!-- Overlay 4: GAME OVER -->
-        <div *ngIf="gameState() === 'GAME_OVER'" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div *ngIf="gameState() === 'GAME_OVER'" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4 z-20">
           <span class="text-6xl animate-pulse">💀</span>
           <h2 class="text-3xl font-black text-red-500">GAME OVER</h2>
           <p class="text-xs text-slate-300">Final Score: <strong class="text-amber-300 text-base">{{ score() }}</strong></p>
           <div class="flex space-x-3">
-            <button (click)="restartCurrentLevel()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">
-              🔄 Retry Maze
+            <button (click)="startGame()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow">
+              🔄 Try Again
             </button>
             <button (click)="setGameState('MENU')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700">
               🏠 Main Menu
@@ -265,36 +199,37 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
   score = signal<number>(0);
   highScore = signal<number>(0);
   lives = signal<number>(3);
+  level = signal<number>(1);
   gameState = signal<'MENU' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAME_OVER'>('MENU');
-  currentLevelIndex = signal<number>(0);
   remainingPellets = signal<number>(0);
-
-  // Simple, Medium, and Complex Maze Configurations
-  levels: LevelConfig[] = [
-    { id: 0, name: 'Simple Warm-Up', difficulty: 'SIMPLE', grid: MAZE_SIMPLE, ghostSpeed: 0.05, frightenedDuration: 12 },
-    { id: 1, name: 'Classic Arena', difficulty: 'MEDIUM', grid: MAZE_LEVEL_1, ghostSpeed: 0.08, frightenedDuration: 8 },
-    { id: 2, name: 'Complex Labyrinth', difficulty: 'COMPLEX', grid: MAZE_COMPLEX, ghostSpeed: 0.13, frightenedDuration: 3 }
-  ];
 
   private ctx!: CanvasRenderingContext2D;
   private animFrameId: number | null = null;
   private currentGrid: number[][] = [];
 
-  private playerGridX = 9;
-  private playerGridY = 16;
+  // Pac-Man Player
+  private playerGridX = 13;
+  private playerGridY = 23;
   private playerSubX = 0;
   private playerSubY = 0;
   private playerDir: Direction = 'NONE';
   private playerNextDir: Direction = 'NONE';
   private playerSpeed = 0.12;
+  private mouthAngle = 0.2;
+  private mouthOpening = true;
 
+  // Ghosts
   private ghosts: Ghost[] = [];
   private frightenedTimer = 0;
-  private ghostsEatenMultiplier = 1;
+  private ghostEatPoints = 200;
+
+  // Global Mode Timer (Alternates Scatter & Chase)
+  private globalModeTimer = 0;
+  private globalMode: 'SCATTER' | 'CHASE' = 'SCATTER';
 
   ngOnInit() {
     this.audioService.startPlaylist('arcade-retro');
-    const savedHighScore = localStorage.getItem('maze_muncher_highscore');
+    const savedHighScore = localStorage.getItem('pacman_highscore');
     if (savedHighScore) this.highScore.set(parseInt(savedHighScore, 10));
   }
 
@@ -305,23 +240,6 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
 
   getLivesArray(): number[] {
     return Array(Math.max(0, this.lives())).fill(0);
-  }
-
-  getCurrentLevelName(): string {
-    return this.levels[this.currentLevelIndex()]?.name || 'Maze';
-  }
-
-  getCurrentLevelDifficulty(): 'SIMPLE' | 'MEDIUM' | 'COMPLEX' | 'EXTREME' {
-    return this.levels[this.currentLevelIndex()]?.difficulty || 'MEDIUM';
-  }
-
-  getDifficultyBadgeClass(diff: string): string {
-    switch (diff) {
-      case 'SIMPLE': return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-      case 'MEDIUM': return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
-      case 'COMPLEX': return 'bg-red-500/20 text-red-300 border border-red-500/30';
-      default: return 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
-    }
   }
 
   setGameState(state: 'MENU' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'GAME_OVER') {
@@ -335,78 +253,73 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     else if (this.gameState() === 'PAUSED') this.setGameState('PLAYING');
   }
 
-  startGame(levelIdx: number) {
-    this.currentLevelIndex.set(levelIdx);
+  startGame() {
     this.score.set(0);
     this.lives.set(3);
-    this.initLevel(levelIdx);
-    this.setGameState('PLAYING');
-  }
-
-  restartCurrentLevel() {
-    this.initLevel(this.currentLevelIndex());
+    this.level.set(1);
+    this.initLevel();
     this.setGameState('PLAYING');
   }
 
   nextLevel() {
-    const nextIdx = this.currentLevelIndex() + 1;
-    if (nextIdx < this.levels.length) {
-      this.currentLevelIndex.set(nextIdx);
-      this.initLevel(nextIdx);
-      this.setGameState('PLAYING');
-    } else {
-      this.setGameState('MENU');
-    }
+    this.level.update(l => l + 1);
+    this.initLevel();
+    this.setGameState('PLAYING');
   }
 
-  private initLevel(levelIdx: number) {
-    const lvl = this.levels[levelIdx];
-    this.currentGrid = lvl.grid.map(row => [...row]);
+  private initLevel() {
+    this.currentGrid = CLASSIC_PACMAN_GRID.map(row => [...row]);
 
     let dots = 0;
-    for (let r = 0; r < this.currentGrid.length; r++) {
-      for (let c = 0; c < this.currentGrid[r].length; c++) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
         if (this.currentGrid[r][c] === 2 || this.currentGrid[r][c] === 3) dots++;
       }
     }
     this.remainingPellets.set(dots);
 
-    this.playerGridX = 9;
-    this.playerGridY = 16;
+    // Reset Player
+    this.playerGridX = 13;
+    this.playerGridY = 23;
     this.playerSubX = 0;
     this.playerSubY = 0;
     this.playerDir = 'NONE';
     this.playerNextDir = 'NONE';
 
+    const lvlSpeed = 0.08 + (this.level() - 1) * 0.01;
+
+    // Ghosts
     this.ghosts = [
       {
-        id: 'blinky', name: 'Spook', emoji: '👻', frightenedEmoji: '🙀', color: '#ef4444',
-        gridX: 9, gridY: 8, subX: 0, subY: 0, dir: 'LEFT',
-        targetX: 9, targetY: 16, homeX: 9, homeY: 8, scatterX: 18, scatterY: 0,
-        isFrightened: false, isEaten: false, speed: lvl.ghostSpeed
+        id: 'blinky', name: 'Blinky', emoji: '👻', frightenedEmoji: '🙀', color: '#ef4444',
+        gridX: 13, gridY: 11, subX: 0, subY: 0, dir: 'LEFT',
+        targetX: 13, targetY: 23, homeX: 13, homeY: 11, scatterX: 25, scatterY: 0,
+        mode: 'SCATTER', speed: lvlSpeed, exitTimer: 0
       },
       {
-        id: 'pinky', name: 'Joker', emoji: '🤡', frightenedEmoji: '🙀', color: '#f472b6',
-        gridX: 8, gridY: 10, subX: 0, subY: 0, dir: 'UP',
-        targetX: 9, targetY: 16, homeX: 8, homeY: 10, scatterX: 0, scatterY: 0,
-        isFrightened: false, isEaten: false, speed: lvl.ghostSpeed * 0.95
+        id: 'pinky', name: 'Pinky', emoji: '🤡', frightenedEmoji: '🙀', color: '#f472b6',
+        gridX: 13, gridY: 14, subX: 0, subY: 0, dir: 'UP',
+        targetX: 13, targetY: 23, homeX: 13, homeY: 14, scatterX: 2, scatterY: 0,
+        mode: 'SCATTER', speed: lvlSpeed * 0.95, exitTimer: 2
       },
       {
-        id: 'inky', name: 'Alien', emoji: '👾', frightenedEmoji: '🙀', color: '#22d3ee',
-        gridX: 9, gridY: 10, subX: 0, subY: 0, dir: 'UP',
-        targetX: 9, targetY: 16, homeX: 9, homeY: 10, scatterX: 18, scatterY: 20,
-        isFrightened: false, isEaten: false, speed: lvl.ghostSpeed * 0.90
+        id: 'inky', name: 'Inky', emoji: '👾', frightenedEmoji: '🙀', color: '#22d3ee',
+        gridX: 11, gridY: 14, subX: 0, subY: 0, dir: 'UP',
+        targetX: 13, targetY: 23, homeX: 11, homeY: 14, scatterX: 27, scatterY: 30,
+        mode: 'SCATTER', speed: lvlSpeed * 0.90, exitTimer: 5
       },
       {
-        id: 'clyde', name: 'Goblin', emoji: '👺', frightenedEmoji: '🙀', color: '#fb923c',
-        gridX: 10, gridY: 10, subX: 0, subY: 0, dir: 'UP',
-        targetX: 9, targetY: 16, homeX: 10, homeY: 10, scatterX: 0, scatterY: 20,
-        isFrightened: false, isEaten: false, speed: lvl.ghostSpeed * 0.85
+        id: 'clyde', name: 'Clyde', emoji: '👺', frightenedEmoji: '🙀', color: '#fb923c',
+        gridX: 15, gridY: 14, subX: 0, subY: 0, dir: 'UP',
+        targetX: 13, targetY: 23, homeX: 15, homeY: 14, scatterX: 0, scatterY: 30,
+        mode: 'SCATTER', speed: lvlSpeed * 0.85, exitTimer: 8
       }
     ];
 
     this.frightenedTimer = 0;
-    this.ghostsEatenMultiplier = 1;
+    this.ghostEatPoints = 200;
+    this.globalModeTimer = 0;
+    this.globalMode = 'SCATTER';
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -446,9 +359,19 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
   }
 
   private updateGameLogic() {
-    const isAtTileCenter = Math.abs(this.playerSubX) < 0.05 && Math.abs(this.playerSubY) < 0.05;
+    // 1. Mouth Animation
+    if (this.mouthOpening) {
+      this.mouthAngle += 0.03;
+      if (this.mouthAngle >= 0.45) this.mouthOpening = false;
+    } else {
+      this.mouthAngle -= 0.03;
+      if (this.mouthAngle <= 0.05) this.mouthOpening = true;
+    }
 
-    if (isAtTileCenter) {
+    // 2. Tile Snapping Turn Logic
+    const isAtCenter = Math.abs(this.playerSubX) < 0.06 && Math.abs(this.playerSubY) < 0.06;
+
+    if (isAtCenter) {
       this.playerSubX = 0;
       this.playerSubY = 0;
 
@@ -457,77 +380,84 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       }
     }
 
+    // 3. Advance Player Movement
     if (this.canMoveTile(this.playerGridX, this.playerGridY, this.playerDir)) {
       if (this.playerDir === 'RIGHT') {
         this.playerSubX += this.playerSpeed;
-        if (this.playerSubX >= 1.0) {
-          this.playerGridX++;
-          this.playerSubX = 0;
-        }
+        if (this.playerSubX >= 0.5) { this.playerGridX++; this.playerSubX = -0.5; }
       } else if (this.playerDir === 'LEFT') {
         this.playerSubX -= this.playerSpeed;
-        if (this.playerSubX <= -1.0) {
-          this.playerGridX--;
-          this.playerSubX = 0;
-        }
+        if (this.playerSubX <= -0.5) { this.playerGridX--; this.playerSubX = 0.5; }
       } else if (this.playerDir === 'DOWN') {
         this.playerSubY += this.playerSpeed;
-        if (this.playerSubY >= 1.0) {
-          this.playerGridY++;
-          this.playerSubY = 0;
-        }
+        if (this.playerSubY >= 0.5) { this.playerGridY++; this.playerSubY = -0.5; }
       } else if (this.playerDir === 'UP') {
         this.playerSubY -= this.playerSpeed;
-        if (this.playerSubY <= -1.0) {
-          this.playerGridY--;
-          this.playerSubY = 0;
-        }
+        if (this.playerSubY <= -0.5) { this.playerGridY--; this.playerSubY = 0.5; }
       }
 
-      if (this.playerGridX < 0) this.playerGridX = 18;
-      if (this.playerGridX > 18) this.playerGridX = 0;
+      // Tunnel Wrap-Around (Row 14)
+      if (this.playerGridX < 0) this.playerGridX = COLS - 1;
+      if (this.playerGridX >= COLS) this.playerGridX = 0;
     } else {
       this.playerSubX = 0;
       this.playerSubY = 0;
     }
 
+    // 4. Dot & Power Pellet Collection
     const currentTile = this.currentGrid[this.playerGridY]?.[this.playerGridX];
-    if (currentTile === 2) {
+    if (currentTile === 2) { // Dot
       this.currentGrid[this.playerGridY][this.playerGridX] = 0;
       this.score.update(s => s + 10);
       this.remainingPellets.update(r => Math.max(0, r - 1));
       this.audioService.playSfx('eatDot');
-    } else if (currentTile === 3) {
+    } else if (currentTile === 3) { // Power Pellet
       this.currentGrid[this.playerGridY][this.playerGridX] = 0;
       this.score.update(s => s + 50);
       this.remainingPellets.update(r => Math.max(0, r - 1));
       this.triggerFrightenedMode();
       this.audioService.playSfx('eatPower');
-    } else if (currentTile === 5) {
+    } else if (currentTile === 5) { // Fruit
       this.currentGrid[this.playerGridY][this.playerGridX] = 0;
       this.score.update(s => s + 200);
       this.audioService.playSfx('eatFruit');
     }
 
+    // Highscore Update
     if (this.score() > this.highScore()) {
       this.highScore.set(this.score());
-      localStorage.setItem('maze_muncher_highscore', this.score().toString());
+      localStorage.setItem('pacman_highscore', this.score().toString());
     }
 
+    // Level Clear
     if (this.remainingPellets() <= 0) {
       this.setGameState('LEVEL_COMPLETE');
       return;
     }
 
+    // 5. Global Scatter/Chase Mode Timers
     if (this.frightenedTimer > 0) {
       this.frightenedTimer -= 1 / 60;
       if (this.frightenedTimer <= 0) {
-        this.ghosts.forEach(g => g.isFrightened = false);
+        this.ghosts.forEach(g => { if (g.mode === 'FRIGHTENED') g.mode = this.globalMode; });
+      }
+    } else {
+      this.globalModeTimer += 1 / 60;
+      if (this.globalMode === 'SCATTER' && this.globalModeTimer > 7) {
+        this.globalMode = 'CHASE';
+        this.globalModeTimer = 0;
+        this.ghosts.forEach(g => { if (g.mode !== 'EATEN') g.mode = 'CHASE'; });
+      } else if (this.globalMode === 'CHASE' && this.globalModeTimer > 20) {
+        this.globalMode = 'SCATTER';
+        this.globalModeTimer = 0;
+        this.ghosts.forEach(g => { if (g.mode !== 'EATEN') g.mode = 'SCATTER'; });
       }
     }
 
+    // 6. Ghost AI & Pathfinding
     this.updateGhostAI();
 
+    // 7. Collision Detection (Pac-Man vs Ghost)
     for (const ghost of this.ghosts) {
       const dist = Math.hypot(
         (this.playerGridX + this.playerSubX) - (ghost.gridX + ghost.subX),
@@ -535,28 +465,32 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       );
 
       if (dist < 0.75) {
-        if (ghost.isFrightened && !ghost.isEaten) {
-          ghost.isEaten = true;
-          ghost.isFrightened = false;
-          this.score.update(s => s + 200 * this.ghostsEatenMultiplier);
-          this.ghostsEatenMultiplier *= 2;
+        if (ghost.mode === 'FRIGHTENED') {
+          ghost.mode = 'EATEN';
+          this.score.update(s => s + this.ghostEatPoints);
+          this.ghostEatPoints *= 2;
           this.audioService.playSfx('eatGhost');
-        } else if (!ghost.isFrightened && !ghost.isEaten) {
+        } else if (ghost.mode === 'CHASE' || ghost.mode === 'SCATTER') {
           this.audioService.playSfx('death');
           this.lives.update(l => l - 1);
+
           if (this.lives() <= 0) {
             this.setGameState('GAME_OVER');
           } else {
-            this.playerGridX = 9;
-            this.playerGridY = 16;
+            // Respawn positions
+            this.playerGridX = 13;
+            this.playerGridY = 23;
             this.playerSubX = 0;
             this.playerSubY = 0;
             this.playerDir = 'NONE';
             this.playerNextDir = 'NONE';
+
             this.ghosts.forEach(g => {
-              g.gridX = g.homeX; g.gridY = g.homeY;
-              g.subX = 0; g.subY = 0;
-              g.isFrightened = false; g.isEaten = false;
+              g.gridX = g.homeX;
+              g.gridY = g.homeY;
+              g.subX = 0;
+              g.subY = 0;
+              g.mode = 'SCATTER';
             });
           }
           break;
@@ -566,39 +500,71 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
   }
 
   private triggerFrightenedMode() {
-    this.frightenedTimer = this.levels[this.currentLevelIndex()].frightenedDuration;
-    this.ghostsEatenMultiplier = 1;
-    this.ghosts.forEach(g => { if (!g.isEaten) g.isFrightened = true; });
+    this.frightenedTimer = 8;
+    this.ghostEatPoints = 200;
+    this.ghosts.forEach(g => {
+      if (g.mode !== 'EATEN') {
+        g.mode = 'FRIGHTENED';
+        g.dir = this.getOppositeDirection(g.dir);
+      }
+    });
   }
 
   private updateGhostAI() {
     this.ghosts.forEach(ghost => {
-      if (ghost.isEaten) {
+      // Exit timers
+      if (ghost.exitTimer > 0) {
+        ghost.exitTimer -= 1 / 60;
+        return;
+      }
+
+      // 1. Compute Target Tile according to personality
+      if (ghost.mode === 'EATEN') {
         ghost.targetX = ghost.homeX;
         ghost.targetY = ghost.homeY;
         if (ghost.gridX === ghost.homeX && ghost.gridY === ghost.homeY) {
-          ghost.isEaten = false;
+          ghost.mode = this.globalMode;
         }
-      } else if (ghost.isFrightened) {
-        ghost.targetX = Math.floor(Math.random() * 19);
-        ghost.targetY = Math.floor(Math.random() * 21);
-      } else {
-        if (ghost.id === 'blinky') {
+      } else if (ghost.mode === 'FRIGHTENED') {
+        ghost.targetX = Math.floor(Math.random() * COLS);
+        ghost.targetY = Math.floor(Math.random() * ROWS);
+      } else if (ghost.mode === 'SCATTER') {
+        ghost.targetX = ghost.scatterX;
+        ghost.targetY = ghost.scatterY;
+      } else { // CHASE PERSONALITIES
+        if (ghost.id === 'blinky') { // Blinky: Direct Chaser
           ghost.targetX = this.playerGridX;
           ghost.targetY = this.playerGridY;
-        } else if (ghost.id === 'pinky') {
-          ghost.targetX = this.playerGridX + 2;
-          ghost.targetY = this.playerGridY;
-        } else if (ghost.id === 'inky') {
-          ghost.targetX = this.playerGridX;
-          ghost.targetY = this.playerGridY - 2;
-        } else {
-          ghost.targetX = ghost.scatterX;
-          ghost.targetY = ghost.scatterY;
+        } else if (ghost.id === 'pinky') { // Pinky: 4 tiles ahead
+          const delta = this.getDelta(this.playerDir);
+          ghost.targetX = this.playerGridX + delta.dx * 4;
+          ghost.targetY = this.playerGridY + delta.dy * 4;
+        } else if (ghost.id === 'inky') { // Inky: Vector from Blinky to 2 ahead of Pac-Man
+          const blinky = this.ghosts.find(g => g.id === 'blinky');
+          const delta = this.getDelta(this.playerDir);
+          const aheadX = this.playerGridX + delta.dx * 2;
+          const aheadY = this.playerGridY + delta.dy * 2;
+          if (blinky) {
+            ghost.targetX = aheadX + (aheadX - blinky.gridX);
+            ghost.targetY = aheadY + (aheadY - blinky.gridY);
+          } else {
+            ghost.targetX = this.playerGridX;
+            ghost.targetY = this.playerGridY;
+          }
+        } else if (ghost.id === 'clyde') { // Clyde: Shy Roamer
+          const distToPlayer = Math.hypot(ghost.gridX - this.playerGridX, ghost.gridY - this.playerGridY);
+          if (distToPlayer > 8) {
+            ghost.targetX = this.playerGridX;
+            ghost.targetY = this.playerGridY;
+          } else {
+            ghost.targetX = ghost.scatterX;
+            ghost.targetY = ghost.scatterY;
+          }
         }
       }
 
-      const isGhostAtCenter = Math.abs(ghost.subX) < 0.05 && Math.abs(ghost.subY) < 0.05;
+      // 2. Turning at Intersection Center
+      const isGhostAtCenter = Math.abs(ghost.subX) < 0.06 && Math.abs(ghost.subY) < 0.06;
 
       if (isGhostAtCenter) {
         ghost.subX = 0;
@@ -606,7 +572,7 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
 
         const validDirs: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'].filter(d => {
           if (d === this.getOppositeDirection(ghost.dir)) return false;
-          return this.canMoveTile(ghost.gridX, ghost.gridY, d as Direction);
+          return this.canMoveTile(ghost.gridX, ghost.gridY, d as Direction, true);
         }) as Direction[];
 
         if (validDirs.length > 0) {
@@ -628,28 +594,34 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
         }
       }
 
-      const speed = ghost.isFrightened ? ghost.speed * 0.6 : ghost.speed;
-      if (ghost.dir === 'RIGHT') { ghost.subX += speed; if (ghost.subX >= 1.0) { ghost.gridX++; ghost.subX = 0; } }
-      else if (ghost.dir === 'LEFT') { ghost.subX -= speed; if (ghost.subX <= -1.0) { ghost.gridX--; ghost.subX = 0; } }
-      else if (ghost.dir === 'DOWN') { ghost.subY += speed; if (ghost.subY >= 1.0) { ghost.gridY++; ghost.subY = 0; } }
-      else if (ghost.dir === 'UP') { ghost.subY -= speed; if (ghost.subY <= -1.0) { ghost.gridY--; ghost.subY = 0; } }
+      // 3. Advance Ghost Sub-Tile Position
+      const speed = ghost.mode === 'FRIGHTENED' ? ghost.speed * 0.5 : (ghost.mode === 'EATEN' ? ghost.speed * 1.8 : ghost.speed);
+      if (ghost.dir === 'RIGHT') { ghost.subX += speed; if (ghost.subX >= 0.5) { ghost.gridX++; ghost.subX = -0.5; } }
+      else if (ghost.dir === 'LEFT') { ghost.subX -= speed; if (ghost.subX <= -0.5) { ghost.gridX--; ghost.subX = 0.5; } }
+      else if (ghost.dir === 'DOWN') { ghost.subY += speed; if (ghost.subY >= 0.5) { ghost.gridY++; ghost.subY = -0.5; } }
+      else if (ghost.dir === 'UP') { ghost.subY -= speed; if (ghost.subY <= -0.5) { ghost.gridY--; ghost.subY = 0.5; } }
 
-      if (ghost.gridX < 0) ghost.gridX = 18;
-      if (ghost.gridX > 18) ghost.gridX = 0;
+      // Tunnel Wrap
+      if (ghost.gridX < 0) ghost.gridX = COLS - 1;
+      if (ghost.gridX >= COLS) ghost.gridX = 0;
     });
   }
 
-  private canMoveTile(gx: number, gy: number, dir: Direction): boolean {
+  private canMoveTile(gx: number, gy: number, dir: Direction, isGhost = false): boolean {
     if (dir === 'NONE') return false;
     const delta = this.getDelta(dir);
     const targetX = gx + delta.dx;
     const targetY = gy + delta.dy;
 
-    if (targetY < 0 || targetY >= this.currentGrid.length || targetX < 0 || targetX >= this.currentGrid[0].length) {
-      return targetY === 10;
+    if (targetY < 0 || targetY >= ROWS || targetX < 0 || targetX >= COLS) {
+      return targetY === 14; // Tunnel Row
     }
 
-    return this.currentGrid[targetY][targetX] !== 1;
+    const tile = this.currentGrid[targetY][targetX];
+    if (tile === 1) return false; // Solid wall
+    if (tile === 4 && !isGhost) return false; // Ghost door impassable to Pacman
+
+    return true;
   }
 
   private getDelta(dir: Direction): { dx: number; dy: number } {
@@ -681,33 +653,34 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     this.ctx.fillStyle = '#020617';
     this.ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let r = 0; r < this.currentGrid.length; r++) {
-      for (let c = 0; c < this.currentGrid[r].length; c++) {
+    // Draw Map Walls & Pellets
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
         const tile = this.currentGrid[r][c];
         const x = c * TILE_SIZE;
         const y = r * TILE_SIZE;
 
-        if (tile === 1) {
-          this.ctx.fillStyle = '#1e40af';
-          this.ctx.fillRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        if (tile === 1) { // Wall
+          this.ctx.fillStyle = '#1e3a8a';
+          this.ctx.fillRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2);
           this.ctx.strokeStyle = '#3b82f6';
-          this.ctx.lineWidth = 2;
-          this.ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
-        } else if (tile === 2) {
+          this.ctx.lineWidth = 1.5;
+          this.ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+        } else if (tile === 2) { // Dot
           this.ctx.fillStyle = '#fde047';
           this.ctx.beginPath();
-          this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 3.5, 0, Math.PI * 2);
+          this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 2.5, 0, Math.PI * 2);
           this.ctx.fill();
-        } else if (tile === 3) {
+        } else if (tile === 3) { // Power Pellet
           this.ctx.fillStyle = '#facc15';
           this.ctx.beginPath();
-          this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 8.5, 0, Math.PI * 2);
+          this.ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 6.5, 0, Math.PI * 2);
           this.ctx.fill();
-        } else if (tile === 4) {
+        } else if (tile === 4) { // Ghost Door
           this.ctx.fillStyle = '#f472b6';
-          this.ctx.fillRect(x + 2, y + TILE_SIZE / 2 - 2, TILE_SIZE - 4, 4);
-        } else if (tile === 5) {
-          this.ctx.font = '20px sans-serif';
+          this.ctx.fillRect(x + 1, y + TILE_SIZE / 2 - 1, TILE_SIZE - 2, 3);
+        } else if (tile === 5) { // Fruit
+          this.ctx.font = '14px sans-serif';
           this.ctx.textAlign = 'center';
           this.ctx.textBaseline = 'middle';
           this.ctx.fillText('🍒', x + TILE_SIZE / 2, y + TILE_SIZE / 2);
@@ -715,6 +688,7 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Draw Pac-Man
     const px = (this.playerGridX + this.playerSubX) * TILE_SIZE + TILE_SIZE / 2;
     const py = (this.playerGridY + this.playerSubY) * TILE_SIZE + TILE_SIZE / 2;
 
@@ -725,11 +699,12 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
     if (this.playerDir === 'LEFT') angle = Math.PI;
     if (this.playerDir === 'UP') angle = -Math.PI / 2;
 
-    this.ctx.arc(px, py, 12, angle + 0.2, angle + Math.PI * 2 - 0.2);
+    this.ctx.arc(px, py, 9, angle + this.mouthAngle, angle + Math.PI * 2 - this.mouthAngle);
     this.ctx.lineTo(px, py);
     this.ctx.fill();
 
-    this.ctx.font = '22px sans-serif';
+    // Draw Ghosts
+    this.ctx.font = '16px sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
@@ -737,7 +712,10 @@ export class MazeMuncherComponent implements OnInit, OnDestroy {
       const gx = (ghost.gridX + ghost.subX) * TILE_SIZE + TILE_SIZE / 2;
       const gy = (ghost.gridY + ghost.subY) * TILE_SIZE + TILE_SIZE / 2;
 
-      const emojiStr = ghost.isEaten ? '👀' : (ghost.isFrightened ? ghost.frightenedEmoji : ghost.emoji);
+      let emojiStr = ghost.emoji;
+      if (ghost.mode === 'EATEN') emojiStr = '👀';
+      else if (ghost.mode === 'FRIGHTENED') emojiStr = ghost.frightenedEmoji;
+
       this.ctx.fillText(emojiStr, gx, gy);
     });
   }
