@@ -177,45 +177,7 @@
             @case ('pdf-tools') { <app-pdf-tools /> }
             @case ('invoice-generator') { <app-invoice-generator /> }
             @default {
-              <!-- Open Source Project Portal Launch View -->
-              <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 space-y-6 max-w-3xl mx-auto shadow-2xl animate-fadeIn">
-                <div class="flex items-center space-x-4 border-b border-slate-800 pb-4">
-                  <span class="text-5xl">{{ item.icon }}</span>
-                  <div>
-                    <h3 class="text-2xl font-black text-amber-400">{{ item.name }}</h3>
-                    <p class="text-xs text-indigo-300 font-mono">{{ item.subcategory }} • {{ item.repoType || 'Open Source Project' }}</p>
-                  </div>
-                </div>
-
-                <p class="text-slate-300 text-sm leading-relaxed">
-                  {{ item.description }}
-                </p>
-
-                <div class="flex flex-wrap gap-2">
-                  @for (tag of item.tags; track tag) {
-                    <span class="px-2.5 py-1 bg-slate-800 text-slate-300 border border-slate-700 rounded-lg text-xs font-mono font-semibold">
-                      #{{ tag }}
-                    </span>
-                  }
-                </div>
-
-                <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-3">
-                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Source & Access Link</h4>
-                  <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <span class="text-xs font-mono text-emerald-400 break-all">
-                      {{ item.sourceUrl || 'https://github.com/topics/' + item.id }}
-                    </span>
-                    <a
-                      [href]="item.sourceUrl || 'https://github.com/topics/' + item.id"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-2 shrink-0">
-                      <span>🐙 View Source / Play Online</span>
-                      <span>↗</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
+              <app-universal-game-engine [item]="item" />
             }
           }
         </div>
