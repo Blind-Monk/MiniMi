@@ -31,6 +31,7 @@ export class TextureGenerator {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 40);
     return texture;
   }
 
@@ -76,6 +77,7 @@ export class TextureGenerator {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 40);
     return texture;
   }
 
