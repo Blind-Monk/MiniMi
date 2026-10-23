@@ -62,3 +62,52 @@ main.js             | main  |  2.11 MB |
 Application bundle generation complete. [8.052 seconds] - 2026-10-23T13:28:41.178Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.11 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.13 MB
+
+Application bundle generation complete. [21.442 seconds] - 2026-10-23T15:01:17.044Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.11 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.13 MB
+
+Application bundle generation complete. [0.015 seconds] - 2026-10-23T15:01:17.087Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [9.767 seconds] - 2026-10-23T15:02:32.242Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type '{ canvasContext: CanvasRenderingContext2D; viewport: PageViewport; }' is not assignable to parameter of type 'RenderParameters'.
+  Property 'canvas' is missing in type '{ canvasContext: CanvasRenderingContext2D; viewport: PageViewport; }' but required in type 'RenderParameters'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/doc-tools/pdf-images.component.ts:156:28:
+[37m      156 │ ...     await page.render([32m{ canvasContext: ctx, viewport }[37m).promise;
+          ╵                           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  'canvas' is declared here.
+
+    node_modules/pdfjs-dist/types/src/display/api.d.ts:397:4:
+[37m      397 │     [32mcanvas[37m: HTMLCanvasElement | null;
+          ╵     [32m~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.12 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.14 MB
+
+Application bundle generation complete. [2.395 seconds] - 2026-10-23T15:06:18.718Z
+
+Page reload sent to client(s).
