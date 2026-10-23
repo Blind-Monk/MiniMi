@@ -110,10 +110,10 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'City Sprint (3D Open World)',
     category: 'games',
     subcategory: '3D Open World / Parkour',
-    description: 'Rooftop parkour and urban exploration with dynamic stunt jumping, mobile touch controls, and high-energy music.',
+    description: 'Rooftop parkour and urban exploration sandbox with dynamic stunt jumps, mobile touch controls, and high-energy music.',
     icon: '🌆',
-    tags: ['3D', 'Parkour', 'Open World', 'High-Energy Audio'],
-    isPopular: false,
+    tags: ['3D', 'Parkour', 'Open World', 'High-Energy Audio', 'Popular'],
+    isPopular: true,
     audioPlaylist: 'high-energy'
   },
   {
