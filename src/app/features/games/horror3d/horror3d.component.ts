@@ -1,13 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-horror3d',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-5xl mx-auto space-y-4 shadow-2xl font-sans select-none">
 
       <!-- Top HUD Header -->
       <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -21,6 +23,9 @@ import * as THREE from 'three';
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-amber-400 text-sm">🔑 Keys Found: {{ keysFound() }}/4</div>
+          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
+            ⛶
+          </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
           </button>
@@ -33,6 +38,14 @@ import * as THREE from 'three';
 
         <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300 pointer-events-none">
           🔦 Controls: WASD to Walk • Flashlight follows camera
+        </div>
+
+        <!-- Touch Controls for Mobile Devices -->
+        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
+          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
         </div>
 
         @if (escaped()) {
@@ -52,6 +65,8 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
 
+  private audioService = inject(AudioService);
+
   keysFound = signal<number>(0);
   escaped = signal<boolean>(false);
 
@@ -67,17 +82,33 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   private animFrameId: number = 0;
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('horror-dissonant');
     this.initThreeJS();
     this.buildMaze();
     this.startLoop();
   }
 
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
+  }
+
   restartGame() {
+    this.audioService.playClickSound();
     this.keysFound.set(0);
     this.escaped.set(false);
     this.posX = 0;
     this.posZ = 0;
     this.keysMeshes.forEach(k => k.visible = true);
+  }
+
+  movePlayer(dir: string) {
+    const speed = 0.4;
+    if (dir === 'w') this.posZ -= speed;
+    if (dir === 's') this.posZ += speed;
+    if (dir === 'a') this.posX -= speed;
+    if (dir === 'd') this.posX += speed;
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -103,6 +134,7 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
     // Dim Ambient Light
     const dimAmb = new THREE.AmbientLight(0x0f172a, 0.2);
@@ -116,6 +148,12 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
     this.flashlight.distance = 20;
     this.scene.add(this.flashlight);
     this.scene.add(this.flashlight.target);
+
+    ResponsiveUtil.setupCanvasResizeObserver(container, (w, h) => {
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h);
+    });
   }
 
   private buildMaze() {
@@ -173,6 +211,7 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
     this.keysMeshes.forEach(key => {
       if (key.visible && Math.hypot(key.position.x - this.posX, key.position.z - this.posZ) < 1.0) {
         key.visible = false;
+        this.audioService.playCoinSound();
         this.keysFound.update(k => k + 1);
         if (this.keysFound() >= 4) {
           this.escaped.set(true);

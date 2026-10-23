@@ -1,17 +1,24 @@
-import { Component, signal, HostListener, OnDestroy } from '@angular/core';
+import { Component, signal, HostListener, OnDestroy, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-blockfall',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-sm mx-auto text-center space-y-4">
+    <div #container class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-sm mx-auto text-center space-y-4 select-none">
       <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
         <span class="text-lg font-bold text-indigo-400">🧱 Lines: {{ lines() }}</span>
-        <button (click)="restart()" class="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded font-semibold text-xs">
-          Restart
-        </button>
+        <div class="flex gap-2">
+          <button (click)="toggleFullscreen()" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded font-semibold text-xs border border-slate-600">
+            ⛶
+          </button>
+          <button (click)="restart()" class="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded font-semibold text-xs">
+            Restart
+          </button>
+        </div>
       </div>
 
       <!-- Grid -->
@@ -23,6 +30,7 @@ import { CommonModule } from '@angular/common';
               [class.bg-blue-600]="cell === 2"
               [class.bg-amber-500]="cell === 3"
               [class.bg-yellow-400]="cell === 4"
+              [class.bg-purple-600]="cell === 5"
               [class.bg-slate-900]="cell === 0"
               class="w-full h-full rounded-[1px] transition-colors border border-slate-950">
             </div>
@@ -42,13 +50,24 @@ import { CommonModule } from '@angular/common';
     </div>
   `
 })
-export class BlockfallComponent implements OnDestroy {
+export class BlockfallComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
+
   grid = Array.from({ length: 20 }, () => Array(10).fill(0));
   lines = signal<number>(0);
   private timer: any;
 
-  constructor() {
+  ngAfterViewInit() {
+    this.audioService.startPlaylist('arcade-retro');
     this.timer = setInterval(() => this.tick(), 500);
+  }
+
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -60,13 +79,22 @@ export class BlockfallComponent implements OnDestroy {
   }
 
   restart() {
+    this.audioService.playClickSound();
     this.grid = Array.from({ length: 20 }, () => Array(10).fill(0));
     this.lines.set(0);
   }
 
-  move(dir: number) {}
-  drop() {}
-  rotate() {}
+  move(dir: number) {
+    this.audioService.playClickSound();
+  }
+
+  drop() {
+    this.audioService.playBoingSound();
+  }
+
+  rotate() {
+    this.audioService.playClickSound();
+  }
 
   private tick() {
     // Basic tick logic

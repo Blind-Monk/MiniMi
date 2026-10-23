@@ -1,17 +1,24 @@
-import { Component, signal, HostListener } from '@angular/core';
+import { Component, signal, HostListener, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-game2048',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-sm mx-auto text-center space-y-4">
+    <div #container class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-sm mx-auto text-center space-y-4 select-none">
       <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
         <span class="text-lg font-bold text-amber-400">🧩 Score: {{ score() }}</span>
-        <button (click)="restart()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold text-xs">
-          New Game
-        </button>
+        <div class="flex gap-2">
+          <button (click)="toggleFullscreen()" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded font-semibold text-xs border border-slate-600">
+            ⛶
+          </button>
+          <button (click)="restart()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold text-xs">
+            New Game
+          </button>
+        </div>
       </div>
 
       <!-- 2048 Grid -->
@@ -45,12 +52,23 @@ import { CommonModule } from '@angular/common';
     </div>
   `
 })
-export class Game2048Component {
+export class Game2048Component implements AfterViewInit {
+  @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
+
   board: number[][] = Array.from({ length: 4 }, () => [0, 0, 0, 0]);
   score = signal<number>(0);
 
-  constructor() {
+  ngAfterViewInit() {
+    this.audioService.startPlaylist('chill-lofi');
     this.restart();
+  }
+
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -62,6 +80,7 @@ export class Game2048Component {
   }
 
   restart() {
+    this.audioService.playClickSound();
     this.board = Array.from({ length: 4 }, () => [0, 0, 0, 0]);
     this.score.set(0);
     this.spawnTile();
@@ -77,6 +96,7 @@ export class Game2048Component {
           if (row[c] === row[c + 1]) {
             row[c] *= 2;
             this.score.update(s => s + row[c]);
+            this.audioService.playCoinSound();
             row.splice(c + 1, 1);
           }
         }
@@ -85,7 +105,10 @@ export class Game2048Component {
         this.board[r] = row;
       }
     }
-    if (moved) this.spawnTile();
+    if (moved) {
+      this.audioService.playClickSound();
+      this.spawnTile();
+    }
   }
 
   private spawnTile() {

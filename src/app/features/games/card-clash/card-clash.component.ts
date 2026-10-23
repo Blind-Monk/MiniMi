@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 interface Card {
   id: number;
@@ -12,7 +14,7 @@ interface Card {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-4xl mx-auto space-y-4 shadow-2xl font-sans">
+    <div #container class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-4xl mx-auto space-y-4 shadow-2xl font-sans select-none">
 
       <!-- Top HUD Header -->
       <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -24,9 +26,14 @@ interface Card {
           </div>
         </div>
 
-        <button (click)="restartGame()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold shadow">
-          🔄 New Match
-        </button>
+        <div class="flex items-center gap-2">
+          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold border border-slate-700">
+            ⛶
+          </button>
+          <button (click)="restartGame()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold shadow">
+            🔄 New Match
+          </button>
+        </div>
       </div>
 
       <!-- Play Table Area -->
@@ -87,7 +94,7 @@ interface Card {
         </div>
 
         @if (winner()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center gap-3 text-center">
+          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center gap-3 text-center z-20">
             <span class="text-5xl">🏆</span>
             <h2 class="text-3xl font-black text-amber-400">{{ winner() }} WINS THE MATCH!</h2>
             <button (click)="restartGame()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-lg">
@@ -99,7 +106,11 @@ interface Card {
     </div>
   `
 })
-export class CardClashComponent {
+export class CardClashComponent implements AfterViewInit {
+  @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
+
   playerHand = signal<Card[]>([]);
   ai1Hand = signal<Card[]>([]);
   ai2Hand = signal<Card[]>([]);
@@ -109,11 +120,19 @@ export class CardClashComponent {
 
   private nextId = 1;
 
-  constructor() {
+  ngAfterViewInit() {
+    this.audioService.startPlaylist('arcade-retro');
     this.restartGame();
   }
 
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
+  }
+
   restartGame() {
+    this.audioService.playClickSound();
     this.winner.set(null);
     this.turn.set(0);
 
@@ -140,11 +159,13 @@ export class CardClashComponent {
   playCard(card: Card) {
     if (this.turn() !== 0 || !this.canPlay(card)) return;
 
+    this.audioService.playCardSound();
     this.playerHand.update(h => h.filter(c => c.id !== card.id));
     this.topCard.set(card);
 
     if (this.playerHand().length === 0) {
       this.winner.set('YOU');
+      this.audioService.playCoinSound();
       return;
     }
 
@@ -153,6 +174,7 @@ export class CardClashComponent {
 
   drawCardForPlayer() {
     if (this.turn() !== 0) return;
+    this.audioService.playCardSound();
     const drawn = this.generateSingleCard();
     this.playerHand.update(h => [...h, drawn]);
     this.advanceTurn();
@@ -173,6 +195,7 @@ export class CardClashComponent {
     const playable = hand.find(c => this.canPlay(c));
 
     if (playable) {
+      this.audioService.playCardSound();
       handSig.update(h => h.filter(c => c.id !== playable.id));
       this.topCard.set(playable);
 
@@ -181,6 +204,7 @@ export class CardClashComponent {
         return;
       }
     } else {
+      this.audioService.playCardSound();
       handSig.update(h => [...h, this.generateSingleCard()]);
     }
 

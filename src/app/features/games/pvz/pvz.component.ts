@@ -1,7 +1,9 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as THREE from 'three';
 import { TextureGenerator } from '../../../core/utils/texture-generator';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 interface SeedCard {
   id: string;
@@ -199,6 +201,8 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('canvasContainer') containerRef!: ElementRef<HTMLDivElement>;
 
+  private audioService = inject(AudioService);
+
   // Catalog of 8 Classic Plants
   seedCards: SeedCard[] = [
     { id: 'sunbloom', name: 'Sunbloom', cost: 50, rechargeTime: 7.5, icon: '🌻', color: '#f59e0b', desc: 'Produces 25 Sun periodically', lastUsedTime: 0 },
@@ -245,6 +249,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
     this.grassTexture = TextureGenerator.createGrassTexture();
     this.woodTexture = TextureGenerator.createWoodTexture(true);
 
+    this.audioService.startPlaylist('funny-quirky');
     this.initThreeJS();
     this.buildLawn();
     this.createLawnmowers();
@@ -252,28 +257,29 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   }
 
   selectSeed(card: SeedCard) {
+    this.audioService.playClickSound();
     this.shovelActive.set(false);
     this.selectedSeed.set(card);
   }
 
   toggleShovel() {
+    this.audioService.playClickSound();
     this.shovelActive.update(v => !v);
   }
 
   toggleGameSpeed() {
+    this.audioService.playClickSound();
     this.gameSpeed.update(s => (s === 1 ? 2 : 1));
   }
 
   togglePause() {
+    this.audioService.playClickSound();
     this.isPaused.update(p => !p);
   }
 
   toggleFullscreen() {
-    const elem = this.containerRef.nativeElement;
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => console.error(err));
-    } else {
-      document.exitFullscreen().catch(err => console.error(err));
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
     }
   }
 
@@ -291,6 +297,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   }
 
   restartGame() {
+    this.audioService.playClickSound();
     this.clearWorld();
     this.sun.set(150);
     this.wave.set(1);
@@ -318,7 +325,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -334,19 +341,12 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     canvas.addEventListener('click', (e) => this.onCanvasClick(e));
     canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
-    window.addEventListener('resize', () => this.onWindowResize());
-  }
 
-  private onWindowResize() {
-    if (!this.renderer || !this.camera || !this.containerRef) return;
-    const container = this.containerRef.nativeElement;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    if (width && height) {
-      this.camera.aspect = width / height;
+    ResponsiveUtil.setupCanvasResizeObserver(container, (w, h) => {
+      this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
-      this.renderer.setSize(width, height);
-    }
+      this.renderer.setSize(w, h);
+    });
   }
 
   private onTouchStart(event: TouchEvent) {
@@ -468,6 +468,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
       const plant = this.placedPlants[idx];
       this.scene.remove(plant.mesh);
       this.placedPlants.splice(idx, 1);
+      this.audioService.playClickSound();
     }
   }
 
@@ -478,6 +479,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
     this.sun.update(s => s - card.cost);
     card.lastUsedTime = Date.now();
+    this.audioService.playBoingSound();
 
     const x = col - 4;
     const z = row - 2;
@@ -575,6 +577,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
   }
 
   private triggerCherryExplosion(row: number, col: number, worldX: number, worldZ: number) {
+    this.audioService.playExplosionSound();
     const expGeo = new THREE.SphereGeometry(1.6, 16, 16);
     const expMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.8 });
     const expMesh = new THREE.Mesh(expGeo, expMat);
@@ -679,6 +682,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
 
   private collectSun(index: number) {
     if (index < 0 || index >= this.sunOrbs.length) return;
+    this.audioService.playCoinSound();
     const orb = this.sunOrbs[index];
     this.sun.update(s => s + orb.value);
     this.scene.remove(orb.mesh);
@@ -756,6 +760,7 @@ export class PvzComponent implements AfterViewInit, OnDestroy {
           if (zInRange) {
             zInRange.hp -= 180;
             plant.hp = 0; // explode
+            this.audioService.playExplosionSound();
           }
         }
       }

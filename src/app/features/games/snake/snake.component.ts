@@ -1,12 +1,14 @@
-import { Component, signal, HostListener, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, signal, HostListener, OnDestroy, ElementRef, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AudioService } from '../../../core/services/audio.service';
+import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 @Component({
   selector: 'app-snake',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-xl mx-auto space-y-4">
+    <div #container class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-white max-w-xl mx-auto space-y-4 select-none">
       <!-- Header / Metrics -->
       <div class="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700">
         <div class="flex items-center gap-4">
@@ -14,6 +16,9 @@ import { CommonModule } from '@angular/common';
           <span class="text-xs text-amber-400 font-medium">🏆 Best: {{ highScore() }}</span>
         </div>
         <div class="flex gap-2">
+          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded font-semibold text-xs border border-slate-600">
+            ⛶
+          </button>
           <button (click)="togglePause()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded font-semibold text-xs border border-slate-600">
             {{ isPaused() ? '▶ Resume' : '⏸ Pause' }}
           </button>
@@ -63,6 +68,9 @@ import { CommonModule } from '@angular/common';
 })
 export class SnakeComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+
+  private audioService = inject(AudioService);
 
   readonly gridSize = 20;
   score = signal<number>(0);
@@ -78,6 +86,7 @@ export class SnakeComponent implements AfterViewInit, OnDestroy {
   private ctx!: CanvasRenderingContext2D;
 
   ngAfterViewInit() {
+    this.audioService.startPlaylist('arcade-retro');
     const canvas = this.canvasRef.nativeElement;
     canvas.width = 400;
     canvas.height = 400;
@@ -87,6 +96,12 @@ export class SnakeComponent implements AfterViewInit, OnDestroy {
     if (savedBest) this.highScore.set(parseInt(savedBest, 10));
 
     this.restart();
+  }
+
+  toggleFullscreen() {
+    if (this.containerRef) {
+      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
+    }
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -118,10 +133,12 @@ export class SnakeComponent implements AfterViewInit, OnDestroy {
 
   togglePause() {
     if (this.gameOver()) return;
+    this.audioService.playClickSound();
     this.isPaused.update(p => !p);
   }
 
   restart() {
+    this.audioService.playClickSound();
     this.snake = [
       { x: 5, y: 10 },
       { x: 4, y: 10 },
@@ -177,6 +194,7 @@ export class SnakeComponent implements AfterViewInit, OnDestroy {
     // Self-collision check
     if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
       this.gameOver.set(true);
+      this.audioService.playExplosionSound();
       if (this.score() > this.highScore()) {
         this.highScore.set(this.score());
         localStorage.setItem('minimi_snake_best', this.score().toString());
@@ -188,6 +206,7 @@ export class SnakeComponent implements AfterViewInit, OnDestroy {
     // Check food collision
     if (head.x === this.food.x && head.y === this.food.y) {
       this.score.update(s => s + 10);
+      this.audioService.playCoinSound();
       this.snake.unshift(head);
       this.spawnFood();
     } else {
