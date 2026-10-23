@@ -19,6 +19,7 @@ import { SnakeComponent } from './features/games/snake/snake.component';
 import { Game2048Component } from './features/games/game2048/game2048.component';
 import { BlockfallComponent } from './features/games/blockfall/blockfall.component';
 import { MazeMuncherComponent } from './features/games/maze-muncher/maze-muncher.component';
+import { Rts0adComponent } from './features/games/rts-0ad/rts-0ad.component';
 
 import { UniversalGameEngineComponent } from './features/games/universal-game-engine/universal-game-engine.component';
 
@@ -51,6 +52,7 @@ import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/in
     Game2048Component,
     BlockfallComponent,
     MazeMuncherComponent,
+    Rts0adComponent,
     UniversalGameEngineComponent,
     JsonFormatterComponent,
     Base64Component,

@@ -50,3 +50,26 @@ main.js             | main  |  1.00 MB |
 Application bundle generation complete. [5.646 seconds] - 2026-10-23T11:54:25.824Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  1.04 MB |
+
+Application bundle generation complete. [4.411 seconds] - 2026-10-23T13:19:17.792Z
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: Rts0adComponent is not used within the template of App[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:55:4:
+[37m      55 │     [32mRts0adComponent[37m,
+         ╵     [32m~~~~~~~~~~~~~~~[0m
+
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  1.04 MB |
+
+Application bundle generation complete. [2.677 seconds] - 2026-10-23T13:19:39.275Z
+
+Component update sent to client(s).
