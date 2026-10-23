@@ -367,9 +367,26 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     if (!this.containerRef) return;
     const elem = this.containerRef.nativeElement;
     if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => console.error(err));
+      elem.requestFullscreen().then(() => {
+        setTimeout(() => this.onWindowResize(), 100);
+      }).catch(err => console.error(err));
     } else {
-      document.exitFullscreen().catch(err => console.error(err));
+      document.exitFullscreen().then(() => {
+        setTimeout(() => this.onWindowResize(), 100);
+      }).catch(err => console.error(err));
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    if (!this.renderer || !this.containerRef) return;
+    const container = this.containerRef.nativeElement;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    this.renderer.setSize(w, h);
+
+    if (this.activeView() === 'showcase') {
+      this.initShowcase3D();
     }
   }
 
@@ -409,19 +426,17 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
 
     const points = this.currentTrackCurve.getPoints(300);
 
-    const shape = new THREE.Shape();
-    shape.moveTo(-6, 0);
-    shape.lineTo(6, 0);
-    shape.lineTo(6, -0.2);
-    shape.lineTo(-6, -0.2);
-
-    const extrudeSettings = { steps: 300, extrudePath: this.currentTrackCurve, bevelEnabled: false };
-    const roadGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const roadMat = new THREE.MeshStandardMaterial({ map: this.asphaltTexture, roughness: 0.4, metalness: 0.1 });
+    const roadGeo = this.buildRoadGeometry(this.currentTrackCurve, 400, 12);
+    const roadMat = new THREE.MeshStandardMaterial({
+      map: this.asphaltTexture,
+      roughness: 0.4,
+      metalness: 0.1,
+      side: THREE.DoubleSide
+    });
     const roadMesh = new THREE.Mesh(roadGeo, roadMat);
     this.scene.add(roadMesh);
 
-    const groundGeo = new THREE.PlaneGeometry(1200, 1200);
+    const groundGeo = new THREE.PlaneGeometry(1500, 1500);
     const groundMat = new THREE.MeshStandardMaterial({ color: track.groundColor, map: this.grassTexture, roughness: 0.9 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -431,12 +446,68 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     this.addSceneryProps(track, points);
   }
 
+  private buildRoadGeometry(curve: THREE.CatmullRomCurve3, steps: number = 400, width: number = 12): THREE.BufferGeometry {
+    const geo = new THREE.BufferGeometry();
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const normals: number[] = [];
+    const indices: number[] = [];
+
+    const halfWidth = width / 2;
+    const up = new THREE.Vector3(0, 1, 0);
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const pt = curve.getPointAt(t);
+      const tang = curve.getTangentAt(t).normalize();
+
+      let side = new THREE.Vector3().crossVectors(up, tang).normalize();
+      if (side.lengthSq() < 0.0001) {
+        side.set(1, 0, 0);
+      }
+
+      const norm = new THREE.Vector3().crossVectors(tang, side).normalize();
+
+      const leftPt = pt.clone().addScaledVector(side, -halfWidth);
+      const rightPt = pt.clone().addScaledVector(side, halfWidth);
+
+      positions.push(leftPt.x, leftPt.y, leftPt.z);
+      positions.push(rightPt.x, rightPt.y, rightPt.z);
+
+      normals.push(norm.x, norm.y, norm.z);
+      normals.push(norm.x, norm.y, norm.z);
+
+      const v = t * 40;
+      uvs.push(0, v);
+      uvs.push(1, v);
+
+      if (i < steps) {
+        const iLeft = i * 2;
+        const iRight = i * 2 + 1;
+        const iNextLeft = (i + 1) * 2;
+        const iNextRight = (i + 1) * 2 + 1;
+
+        indices.push(iLeft, iNextLeft, iRight);
+        indices.push(iRight, iNextLeft, iNextRight);
+      }
+    }
+
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(indices);
+
+    return geo;
+  }
+
   private addSceneryProps(track: TrackData, pathPoints: THREE.Vector3[]) {
+    const up = new THREE.Vector3(0, 1, 0);
     pathPoints.forEach((pt, idx) => {
       if (idx % 4 !== 0) return;
 
-      const norm = this.currentTrackCurve.getTangentAt(idx / pathPoints.length);
-      const perp = new THREE.Vector3(-norm.z, 0, norm.x).normalize();
+      const norm = this.currentTrackCurve.getTangentAt(idx / pathPoints.length).normalize();
+      let perp = new THREE.Vector3().crossVectors(up, norm).normalize();
+      if (perp.lengthSq() < 0.0001) perp.set(1, 0, 0);
 
       // Guard Rails along edges
       const railGeo = new THREE.BoxGeometry(0.3, 0.8, 4);
@@ -828,9 +899,12 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
     const normT = Math.min(0.999, Math.max(0, car.progress % 1.0));
 
     car.pos = this.currentTrackCurve.getPointAt(normT);
-    car.tangent = this.currentTrackCurve.getTangentAt(normT);
+    car.tangent = this.currentTrackCurve.getTangentAt(normT).normalize();
 
-    const perp = new THREE.Vector3(-car.tangent.z, 0, car.tangent.x).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    let perp = new THREE.Vector3().crossVectors(up, car.tangent).normalize();
+    if (perp.lengthSq() < 0.0001) perp.set(1, 0, 0);
+
     const finalPos = car.pos.clone().addScaledVector(perp, car.laneOffset);
 
     car.mesh.position.copy(finalPos);
