@@ -20,6 +20,7 @@ import { BlockfallComponent } from './features/games/blockfall/blockfall.compone
 import { MazeMuncherComponent } from './features/games/maze-muncher/maze-muncher.component';
 
 // Import Developer & Security Tools
+import { CodeCompilerComponent } from './features/tools/code-compiler/code-compiler.component';
 import { JsonFormatterComponent } from './features/tools/json-formatter/json-formatter.component';
 import { Base64Component } from './features/tools/base64/base64.component';
 import { QrGenComponent } from './features/tools/qr-gen/qr-gen.component';
@@ -48,6 +49,7 @@ import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/in
     Game2048Component,
     BlockfallComponent,
     MazeMuncherComponent,
+    CodeCompilerComponent,
     JsonFormatterComponent,
     Base64Component,
     QrGenComponent,

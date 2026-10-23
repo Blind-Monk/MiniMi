@@ -147,6 +147,36 @@ export const CATALOG_ITEMS: CatalogItem[] = [
 
   // --- TOOLS ---
   {
+    id: 'html-compiler',
+    name: 'HTML Compiler & Live Preview',
+    category: 'tools',
+    subcategory: 'Developer / Web',
+    description: 'Write, compile, and live preview HTML, CSS, and JS code directly in browser with isolated sandbox.',
+    icon: '🌐',
+    tags: ['Dev', 'HTML', 'Compiler', 'CSS', 'JavaScript', 'Popular'],
+    isPopular: true
+  },
+  {
+    id: 'md-compiler',
+    name: 'Markdown Compiler & Preview',
+    category: 'tools',
+    subcategory: 'Developer / Text',
+    description: 'Compile and render Markdown text to styled HTML live preview with table, code block, and list support.',
+    icon: '📝',
+    tags: ['Dev', 'Markdown', 'Compiler', 'Text'],
+    isPopular: true
+  },
+  {
+    id: 'code-compiler',
+    name: 'JS / Script Code Runner',
+    category: 'tools',
+    subcategory: 'Developer / Execution',
+    description: 'Execute JavaScript & script snippets in a safe client-side environment with captured console output logs.',
+    icon: '⚡',
+    tags: ['Dev', 'JavaScript', 'Script', 'Runner', 'Compiler'],
+    isPopular: true
+  },
+  {
     id: 'json-formatter',
     name: 'JSON Formatter & Tree',
     category: 'tools',

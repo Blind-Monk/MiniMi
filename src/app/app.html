@@ -100,6 +100,9 @@
             @case ('2048') { <app-game2048 /> }
             @case ('blockfall') { <app-blockfall /> }
             @case ('maze-muncher') { <app-maze-muncher /> }
+            @case ('html-compiler') { <app-code-compiler [initialMode]="'html'" /> }
+            @case ('md-compiler') { <app-code-compiler [initialMode]="'markdown'" /> }
+            @case ('code-compiler') { <app-code-compiler [initialMode]="'script'" /> }
             @case ('json-formatter') { <app-json-formatter /> }
             @case ('base64') { <app-base64 /> }
             @case ('qr-gen') { <app-qr-gen /> }
