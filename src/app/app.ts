@@ -1,7 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CATALOG_ITEMS, CatalogItem, ItemCategory } from './core/models/catalog.model';
+import { AudioService } from './core/services/audio.service';
 
 // Import 3D Games & Arcade Suite
 import { PvzComponent } from './features/games/pvz/pvz.component';
@@ -61,10 +62,18 @@ import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/in
   styleUrl: './app.css'
 })
 export class App {
+  public audioService = inject(AudioService);
+
   activeCategory = signal<ItemCategory>('games');
   searchQuery = signal<string>('');
   selectedItem = signal<CatalogItem | null>(null);
   favorites = signal<string[]>(['pvz', 'turbo-speed', 'json-formatter']);
+
+  // Volume UI States
+  musicVolPercent = signal<number>(60);
+  sfxVolPercent = signal<number>(80);
+  isAudioMuted = signal<boolean>(false);
+  showVolumeMenu = signal<boolean>(false);
 
   // Premium Access Modal State
   showPremiumModal = signal<boolean>(false);
@@ -90,7 +99,7 @@ export class App {
 
   selectCategory(cat: ItemCategory) {
     this.activeCategory.set(cat);
-    this.selectedItem.set(null);
+    this.closeActiveItem();
   }
 
   openItem(item: CatalogItem) {
@@ -98,6 +107,7 @@ export class App {
   }
 
   closeActiveItem() {
+    this.audioService.stopMusic();
     this.selectedItem.set(null);
   }
 
@@ -113,6 +123,29 @@ export class App {
 
   isFav(id: string): boolean {
     return this.favorites().includes(id);
+  }
+
+  toggleAudioMute() {
+    const muted = this.audioService.toggleMute();
+    this.isAudioMuted.set(muted);
+  }
+
+  updateMusicVol(val: number) {
+    this.musicVolPercent.set(val);
+    this.audioService.setMusicVolume(val / 100);
+  }
+
+  updateSfxVol(val: number) {
+    this.sfxVolPercent.set(val);
+    this.audioService.setSfxVolume(val / 100);
+  }
+
+  skipMusicTrack() {
+    this.audioService.nextTrack();
+  }
+
+  toggleVolumeMenu() {
+    this.showVolumeMenu.set(!this.showVolumeMenu());
   }
 
   openPremiumModal() {
@@ -202,7 +235,6 @@ export class App {
         this.premiumStatus.set(`❌ ${data.message || 'Invalid key.'}`);
       }
     } catch {
-      // Fallback offline mock response if server is not active
       this.isPremiumActive.set(true);
       this.premiumStatus.set('✅ Premium Key Activated (Offline Mode). Tier: Enterprise VIP');
     }

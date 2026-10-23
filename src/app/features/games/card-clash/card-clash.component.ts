@@ -1,12 +1,12 @@
-import { Component, signal, inject, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AudioService } from '../../../core/services/audio.service';
-import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
 interface Card {
   id: number;
   color: 'red' | 'blue' | 'green' | 'yellow' | 'wild';
-  value: string; // '0'-'9', 'Skip', 'Reverse', '+2', 'Wild', 'Wild +4'
+  value: string;
+  type: 'number' | 'skip' | 'reverse' | 'draw2' | 'wild' | 'draw4';
 }
 
 @Component({
@@ -14,218 +14,203 @@ interface Card {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div #container class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-4xl mx-auto space-y-4 shadow-2xl font-sans select-none">
-
-      <!-- Top HUD Header -->
-      <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
-        <div class="flex items-center gap-3">
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white max-w-4xl mx-auto space-y-4 shadow-2xl font-sans select-none">
+      <div class="flex items-center justify-between bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+        <div class="flex items-center space-x-3">
           <span class="text-2xl">🃏</span>
           <div>
-            <h2 class="text-base font-extrabold text-amber-400">CARD CLASH (UNO STYLE)</h2>
-            <p class="text-xs text-slate-400">Match by Color or Value • Action Cards & AI Opponents</p>
+            <h2 class="text-lg font-black text-amber-400">CARD CLASH (UNO STYLE)</h2>
+            <p class="text-xs text-slate-400">Match colors and values against AI opponents</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold border border-slate-700">
-            ⛶
-          </button>
-          <button (click)="restartGame()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold shadow">
+        <div class="flex items-center space-x-3">
+          <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/30">
+            Current Turn: <strong>{{ isPlayerTurn() ? 'YOU' : 'AI OPPONENT' }}</strong>
+          </span>
+          <button (click)="restartGame()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold">
             🔄 New Match
           </button>
         </div>
       </div>
 
-      <!-- Play Table Area -->
-      <div class="bg-emerald-900/60 border-2 border-emerald-700/60 rounded-2xl p-6 min-h-[360px] flex flex-col justify-between relative shadow-inner">
-
-        <!-- Opponents Hands -->
-        <div class="flex justify-around items-center">
-          <div class="bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-center">
-            <span class="text-xs font-bold text-slate-300">🤖 AI Bot 1</span>
-            <div class="text-amber-400 font-extrabold text-sm">{{ ai1Hand().length }} Cards</div>
-          </div>
-          <div class="bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-center">
-            <span class="text-xs font-bold text-slate-300">🤖 AI Bot 2</span>
-            <div class="text-amber-400 font-extrabold text-sm">{{ ai2Hand().length }} Cards</div>
-          </div>
-        </div>
-
-        <!-- Center Discard & Draw Pile -->
-        <div class="flex items-center justify-center gap-8 my-4">
-          <!-- Draw Pile -->
-          <button (click)="drawCardForPlayer()" [disabled]="turn() !== 0" class="w-24 h-36 bg-slate-800 hover:bg-slate-700 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center gap-1 shadow-xl transition-all cursor-pointer">
-            <span class="text-2xl">🎴</span>
-            <span class="text-xs font-bold text-slate-300">Draw Pile</span>
-          </button>
-
-          <!-- Top Discard Card -->
-          @if (topCard(); as card) {
-            <div [class]="getCardBgClass(card.color)" class="w-24 h-36 border-2 border-white/40 rounded-xl flex flex-col items-center justify-between p-3 shadow-2xl animate-fade-in font-extrabold">
-              <span class="text-sm self-start">{{ card.value }}</span>
-              <span class="text-3xl">{{ card.value }}</span>
-              <span class="text-sm self-end">{{ card.value }}</span>
-            </div>
-          }
-        </div>
-
-        <!-- Player Hand -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-amber-300">YOUR HAND ({{ playerHand().length }} Cards)</span>
-            <span class="text-xs text-slate-300 font-bold" [class.text-amber-400]="turn() === 0">
-              {{ turn() === 0 ? "👉 YOUR TURN!" : "⏳ Opponent's Turn..." }}
-            </span>
-          </div>
-
-          <div class="flex items-center gap-2 overflow-x-auto pb-2">
-            @for (card of playerHand(); track card.id) {
-              <button
-                (click)="playCard(card)"
-                [disabled]="turn() !== 0 || !canPlay(card)"
-                [class]="getCardBgClass(card.color)"
-                class="w-20 h-28 shrink-0 rounded-xl border-2 border-white/30 p-2 flex flex-col items-center justify-between font-black shadow-lg hover:-translate-y-2 disabled:opacity-40 transition-all cursor-pointer">
-                <span class="text-xs self-start">{{ card.value }}</span>
-                <span class="text-2xl">{{ card.value }}</span>
-                <span class="text-xs self-end">{{ card.value }}</span>
-              </button>
+      <!-- Play Arena -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 min-h-[300px] flex flex-col items-center justify-center relative space-y-6">
+        <!-- AI Hand -->
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-bold text-slate-400">AI Hand ({{ aiHand().length }} cards):</span>
+          <div class="flex space-x-1">
+            @for (card of aiHand(); track card.id) {
+              <div class="w-8 h-12 bg-indigo-900 border border-indigo-500 rounded-md shadow flex items-center justify-center text-xs font-mono">
+                🂠
+              </div>
             }
           </div>
         </div>
 
-        @if (winner()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center gap-3 text-center z-20">
-            <span class="text-5xl">🏆</span>
-            <h2 class="text-3xl font-black text-amber-400">{{ winner() }} WINS THE MATCH!</h2>
-            <button (click)="restartGame()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-lg">
-              PLAY AGAIN
-            </button>
+        <!-- Center Discard & Draw Pile -->
+        <div class="flex items-center space-x-8 my-4">
+          <!-- Draw Deck -->
+          <button (click)="drawCardForPlayer()" [disabled]="!isPlayerTurn()" class="w-20 h-28 bg-slate-800 border-2 border-dashed border-slate-600 hover:border-amber-400 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all shadow-lg hover:scale-105 disabled:opacity-50">
+            <span class="text-2xl">🂠</span>
+            <span class="text-[10px] font-bold text-slate-300">DRAW</span>
+          </button>
+
+          <!-- Discard Pile Top Card -->
+          @if (topCard(); as card) {
+            <div [class]="getCardBgClass(card.color)" class="w-20 h-28 border-2 border-white/80 rounded-xl flex flex-col items-center justify-between p-2 text-white font-black text-lg shadow-2xl animate-fadeIn">
+              <span class="text-xs self-start">{{ card.value }}</span>
+              <span class="text-2xl">{{ getCardIcon(card.type) }}</span>
+              <span class="text-xs self-end">{{ card.value }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Status Message Banner -->
+        <div class="text-xs font-bold text-amber-300 bg-amber-500/10 px-4 py-1.5 rounded-full border border-amber-500/20">
+          {{ statusText() }}
+        </div>
+
+        <!-- Player Hand -->
+        <div class="space-y-2 w-full text-center">
+          <span class="text-xs font-bold text-slate-400">Your Hand ({{ playerHand().length }} cards):</span>
+          <div class="flex flex-wrap items-center justify-center gap-2 max-w-full overflow-x-auto p-2">
+            @for (card of playerHand(); track card.id) {
+              <button
+                (click)="playPlayerCard(card)"
+                [disabled]="!isPlayerTurn() || !canPlayCard(card)"
+                [class]="getCardBgClass(card.color)"
+                class="w-16 h-24 border border-white/60 rounded-xl flex flex-col items-center justify-between p-1.5 text-white font-bold text-sm shadow-md hover:scale-110 hover:-translate-y-2 transition-all disabled:opacity-40 disabled:hover:scale-100 disabled:hover:translate-y-0 cursor-pointer">
+                <span class="text-[10px] self-start">{{ card.value }}</span>
+                <span class="text-lg">{{ getCardIcon(card.type) }}</span>
+                <span class="text-[10px] self-end">{{ card.value }}</span>
+              </button>
+            }
           </div>
-        }
+        </div>
       </div>
     </div>
   `
 })
-export class CardClashComponent implements AfterViewInit {
-  @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
-
+export class CardClashComponent implements OnInit, OnDestroy {
   private audioService = inject(AudioService);
 
   playerHand = signal<Card[]>([]);
-  ai1Hand = signal<Card[]>([]);
-  ai2Hand = signal<Card[]>([]);
+  aiHand = signal<Card[]>([]);
   topCard = signal<Card | null>(null);
-  turn = signal<number>(0); // 0: Player, 1: AI1, 2: AI2
-  winner = signal<string | null>(null);
+  isPlayerTurn = signal<boolean>(true);
+  statusText = signal<string>('Your turn! Select a matching card or draw.');
 
   private nextId = 1;
 
-  ngAfterViewInit() {
-    this.audioService.startPlaylist('arcade-retro');
+  ngOnInit() {
+    this.audioService.startPlaylist('funny-quirky');
     this.restartGame();
   }
 
-  toggleFullscreen() {
-    if (this.containerRef) {
-      ResponsiveUtil.toggleFullscreen(this.containerRef.nativeElement);
-    }
-  }
-
   restartGame() {
-    this.audioService.playClickSound();
-    this.winner.set(null);
-    this.turn.set(0);
-
-    this.playerHand.set(this.generateHand(7));
-    this.ai1Hand.set(this.generateHand(7));
-    this.ai2Hand.set(this.generateHand(7));
-    this.topCard.set(this.generateSingleCard());
+    this.playerHand.set(this.generateRandomHand(7));
+    this.aiHand.set(this.generateRandomHand(7));
+    this.topCard.set(this.generateRandomCard());
+    this.isPlayerTurn.set(true);
+    this.statusText.set('Match the top card color or symbol!');
   }
 
-  getCardBgClass(color: string): string {
-    if (color === 'red') return 'bg-red-600 text-white';
-    if (color === 'blue') return 'bg-blue-600 text-white';
-    if (color === 'green') return 'bg-emerald-600 text-white';
-    if (color === 'yellow') return 'bg-amber-400 text-slate-950';
-    return 'bg-gradient-to-tr from-purple-600 to-pink-600 text-white';
-  }
-
-  canPlay(card: Card): boolean {
+  canPlayCard(card: Card): boolean {
     const top = this.topCard();
     if (!top) return true;
     return card.color === 'wild' || card.color === top.color || card.value === top.value;
   }
 
-  playCard(card: Card) {
-    if (this.turn() !== 0 || !this.canPlay(card)) return;
+  playPlayerCard(card: Card) {
+    if (!this.isPlayerTurn() || !this.canPlayCard(card)) return;
 
     this.audioService.playCardSound();
-    this.playerHand.update(h => h.filter(c => c.id !== card.id));
+    this.playerHand.update((h: Card[]) => h.filter((c: Card) => c.id !== card.id));
     this.topCard.set(card);
 
     if (this.playerHand().length === 0) {
-      this.winner.set('YOU');
-      this.audioService.playCoinSound();
+      this.statusText.set('🎉 VICTORY! You played all your cards!');
       return;
     }
 
-    this.advanceTurn();
+    this.isPlayerTurn.set(false);
+    this.statusText.set('AI Opponent is thinking...');
+    setTimeout(() => this.playAiTurn(), 1200);
   }
 
   drawCardForPlayer() {
-    if (this.turn() !== 0) return;
+    if (!this.isPlayerTurn()) return;
     this.audioService.playCardSound();
-    const drawn = this.generateSingleCard();
-    this.playerHand.update(h => [...h, drawn]);
-    this.advanceTurn();
+    const newCard = this.generateRandomCard();
+    this.playerHand.update((h: Card[]) => [...h, newCard]);
+    this.statusText.set('You drew a card. AI Turn.');
+    this.isPlayerTurn.set(false);
+    setTimeout(() => this.playAiTurn(), 1200);
   }
 
-  private advanceTurn() {
-    const nextTurn = (this.turn() + 1) % 3;
-    this.turn.set(nextTurn);
-
-    if (nextTurn !== 0) {
-      setTimeout(() => this.processAITurn(nextTurn), 800);
-    }
-  }
-
-  private processAITurn(botIdx: number) {
-    const handSig = botIdx === 1 ? this.ai1Hand : this.ai2Hand;
-    const hand = handSig();
-    const playable = hand.find(c => this.canPlay(c));
-
-    if (playable) {
+  private playAiTurn() {
+    const playable = this.aiHand().filter((c: Card) => this.canPlayCard(c));
+    if (playable.length > 0) {
+      const cardToPlay = playable[0];
       this.audioService.playCardSound();
-      handSig.update(h => h.filter(c => c.id !== playable.id));
-      this.topCard.set(playable);
+      this.aiHand.update((h: Card[]) => h.filter((c: Card) => c.id !== cardToPlay.id));
+      this.topCard.set(cardToPlay);
 
-      if (handSig().length === 0) {
-        this.winner.set(`AI BOT ${botIdx}`);
+      if (this.aiHand().length === 0) {
+        this.statusText.set('🧟 AI OPPONENT WON! Better luck next time.');
         return;
       }
+      this.statusText.set(`AI played ${cardToPlay.color.toUpperCase()} ${cardToPlay.value}. Your turn!`);
     } else {
-      this.audioService.playCardSound();
-      handSig.update(h => [...h, this.generateSingleCard()]);
+      const drawn = this.generateRandomCard();
+      this.aiHand.update((h: Card[]) => [...h, drawn]);
+      this.statusText.set('AI had no playable cards and drew one. Your turn!');
     }
-
-    this.advanceTurn();
+    this.isPlayerTurn.set(true);
   }
 
-  private generateHand(count: number): Card[] {
-    return Array.from({ length: count }, () => this.generateSingleCard());
+  private generateRandomHand(count: number): Card[] {
+    const hand: Card[] = [];
+    for (let i = 0; i < count; i++) {
+      hand.push(this.generateRandomCard());
+    }
+    return hand;
   }
 
-  private generateSingleCard(): Card {
-    const colors: ('red' | 'blue' | 'green' | 'yellow' | 'wild')[] = ['red', 'blue', 'green', 'yellow'];
-    const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', 'Reverse', '+2'];
-
-    const isWild = Math.random() < 0.1;
-    if (isWild) {
-      return { id: this.nextId++, color: 'wild', value: 'Wild' };
-    }
-
+  private generateRandomCard(): Card {
+    const colors: ('red' | 'blue' | 'green' | 'yellow')[] = ['red', 'blue', 'green', 'yellow'];
+    const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'SKIP', '+2'];
     const color = colors[Math.floor(Math.random() * colors.length)];
-    const value = values[Math.floor(Math.random() * values.length)];
-    return { id: this.nextId++, color, value };
+    const val = values[Math.floor(Math.random() * values.length)];
+
+    return {
+      id: this.nextId++,
+      color,
+      value: val,
+      type: val === 'SKIP' ? 'skip' : (val === '+2' ? 'draw2' : 'number')
+    };
+  }
+
+  getCardBgClass(color: string): string {
+    switch (color) {
+      case 'red': return 'bg-red-600';
+      case 'blue': return 'bg-blue-600';
+      case 'green': return 'bg-emerald-600';
+      case 'yellow': return 'bg-amber-500 text-slate-950';
+      default: return 'bg-purple-600';
+    }
+  }
+
+  getCardIcon(type: string): string {
+    switch (type) {
+      case 'skip': return '🚫';
+      case 'draw2': return '+2';
+      default: return '🃏';
+    }
+  }
+
+  ngOnDestroy() {
+    this.audioService.stopMusic();
   }
 }

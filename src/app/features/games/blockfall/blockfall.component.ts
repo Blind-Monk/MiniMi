@@ -101,6 +101,7 @@ export class BlockfallComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.audioService.stopMusic();
     if (this.timer) clearInterval(this.timer);
   }
 }

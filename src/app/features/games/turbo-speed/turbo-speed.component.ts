@@ -1027,6 +1027,7 @@ export class TurboSpeedComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.audioService.stopMusic();
     cancelAnimationFrame(this.animFrameId);
     cancelAnimationFrame(this.showcaseAnimId);
     if (this.renderer) this.renderer.dispose();

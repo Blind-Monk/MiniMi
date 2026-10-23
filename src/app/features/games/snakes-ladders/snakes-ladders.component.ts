@@ -235,6 +235,7 @@ export class SnakesLaddersComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.audioService.stopMusic();
     cancelAnimationFrame(this.animFrameId);
     if (this.renderer) this.renderer.dispose();
   }

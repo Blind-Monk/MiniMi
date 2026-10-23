@@ -70,8 +70,8 @@
     <!-- Active Game / Tool Detail Fullscreen Modal Overlay -->
     @if (selectedItem(); as item) {
       <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-6 shadow-2xl relative animate-fadeIn">
-        <!-- Close / Back Header Button -->
-        <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-700">
+        <!-- Close / Back Header Button with Volume Control Toolbar -->
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 mb-6 border-b border-slate-700 gap-4">
           <div class="flex items-center space-x-3">
             <span class="text-3xl">{{ item.icon }}</span>
             <div>
@@ -84,11 +84,72 @@
               <p class="text-sm text-slate-400">{{ item.description }}</p>
             </div>
           </div>
-          <button
-            (click)="closeActiveItem()"
-            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold rounded-lg transition-colors flex items-center space-x-1">
-            <span>✕ Close</span>
-          </button>
+
+          <!-- Volume & Audio Control Toolbar -->
+          <div class="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
+            @if (item.category === 'games') {
+              <div class="flex items-center bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700/80 gap-3">
+                <!-- Track Title & Skip -->
+                <div class="flex items-center space-x-2 max-w-[200px]">
+                  <span class="text-xs">🎵</span>
+                  <span class="text-xs font-mono text-indigo-300 truncate" title="{{ audioService.getCurrentTrackTitle() }}">
+                    {{ audioService.getCurrentTrackTitle() }}
+                  </span>
+                  <button
+                    (click)="skipMusicTrack()"
+                    class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors"
+                    title="Next Track">
+                    ⏭️
+                  </button>
+                </div>
+
+                <!-- Music Volume Slider -->
+                <div class="flex items-center space-x-1.5 border-l border-slate-700 pl-3">
+                  <span class="text-xs">🎷</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    [ngModel]="musicVolPercent()"
+                    (ngModelChange)="updateMusicVol($event)"
+                    class="w-16 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    title="Music Volume: {{ musicVolPercent() }}%"
+                  >
+                </div>
+
+                <!-- SFX Volume Slider -->
+                <div class="flex items-center space-x-1.5 border-l border-slate-700 pl-3">
+                  <span class="text-xs">🔔</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    [ngModel]="sfxVolPercent()"
+                    (ngModelChange)="updateSfxVol($event)"
+                    class="w-16 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                    title="SFX Volume: {{ sfxVolPercent() }}%"
+                  >
+                </div>
+
+                <!-- Mute / Unmute Toggle Button -->
+                <button
+                  (click)="toggleAudioMute()"
+                  [class.bg-red-500\/20]="isAudioMuted()"
+                  [class.text-red-400]="isAudioMuted()"
+                  [class.bg-slate-800]="!isAudioMuted()"
+                  [class.text-emerald-400]="!isAudioMuted()"
+                  class="px-2.5 py-1 rounded-lg font-mono text-xs border border-slate-700 transition-colors flex items-center space-x-1">
+                  <span>{{ isAudioMuted() ? '🔇 Muted' : '🔊 Sound On' }}</span>
+                </button>
+              </div>
+            }
+
+            <button
+              (click)="closeActiveItem()"
+              class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold rounded-xl transition-colors flex items-center space-x-1 shadow">
+              <span>✕ Close</span>
+            </button>
+          </div>
         </div>
 
         <!-- Render Specific Game or Tool Component -->

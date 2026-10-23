@@ -62,7 +62,7 @@ export class AudioService {
   };
 
   constructor() {
-    // Lazy AudioContext initialization on first user interaction
+    // Lazy AudioContext initialization
   }
 
   private initCtx() {
@@ -88,16 +88,37 @@ export class AudioService {
     }
   }
 
+  // --- Volume Control Getters & Setters ---
+  public setMusicVolume(val: number) {
+    this.musicVolume = Math.max(0, Math.min(1, val));
+    if (this.ctx && this.musicGain && !this.isMuted) {
+      this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+    }
+  }
+
+  public getMusicVolume(): number {
+    return this.musicVolume;
+  }
+
+  public setSfxVolume(val: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, val));
+    if (this.ctx && this.sfxGain && !this.isMuted) {
+      this.sfxGain.gain.setValueAtTime(this.sfxVolume, this.ctx.currentTime);
+    }
+  }
+
+  public getSfxVolume(): number {
+    return this.sfxVolume;
+  }
+
   // --- Fisher-Yates Shuffle Bag Non-Repeating Logic ---
   private refillShuffleBag(playlist: MusicPlaylistType) {
     const tracks = this.playlistTracks[playlist];
     this.shuffleBag = tracks.map((_, index) => index);
-    // Fisher-Yates shuffle
     for (let i = this.shuffleBag.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.shuffleBag[i], this.shuffleBag[j]] = [this.shuffleBag[j], this.shuffleBag[i]];
     }
-    // Prevent immediate repeat of the previous track if bag reshuffled
     if (this.shuffleBag.length > 1 && this.shuffleBag[0] === this.currentTrackIndex) {
       const first = this.shuffleBag.shift()!;
       this.shuffleBag.push(first);
@@ -116,7 +137,7 @@ export class AudioService {
     this.ensureContextResumed();
 
     if (this.currentPlaylist === playlist && this.isPlaying) {
-      return; // Already playing this playlist
+      return;
     }
 
     this.stopMusic();
@@ -145,9 +166,14 @@ export class AudioService {
 
   public stopMusic() {
     this.isPlaying = false;
+    this.currentPlaylist = null;
+    this.currentTrackTitle = 'Stopped';
     if (this.timerId !== null) {
       clearInterval(this.timerId);
       this.timerId = null;
+    }
+    if (this.ctx && this.musicGain) {
+      this.musicGain.gain.setValueAtTime(0, this.ctx.currentTime);
     }
   }
 
@@ -173,33 +199,37 @@ export class AudioService {
   private renderProceduralTrack(track: TrackInfo) {
     if (!this.ctx || !this.musicGain) return;
 
+    // Restore music gain if unmuted
+    if (!this.isMuted) {
+      this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+    }
+
     const intervalMs = (60 / track.bpm) * 1000 / 2; // Eighth note step
     let step = 0;
 
-    // Track specific note sequences
     let bassNotes: number[] = [];
     let leadNotes: number[] = [];
     let chordFreqs: number[][] = [];
 
     if (track.genre === 'high-energy') {
-      bassNotes = [110, 110, 130.81, 110, 146.83, 130.81, 110, 97.99]; // A2, A2, C3, A2, D3, C3, A2, G2
-      leadNotes = [440, 523.25, 659.25, 587.33, 659.25, 783.99, 659.25, 523.25]; // A4, C5, E5, D5, E5, G5, E5, C5
+      bassNotes = [110, 110, 130.81, 110, 146.83, 130.81, 110, 97.99];
+      leadNotes = [440, 523.25, 659.25, 587.33, 659.25, 783.99, 659.25, 523.25];
     } else if (track.genre === 'chill-lofi') {
-      bassNotes = [65.41, 65.41, 73.42, 87.31]; // C2, D2, F2
+      bassNotes = [65.41, 65.41, 73.42, 87.31];
       chordFreqs = [
-        [261.63, 329.63, 392.00, 493.88], // Cmaj7
-        [293.66, 349.23, 440.00, 523.25], // Dm7
-        [349.23, 440.00, 523.25, 659.25]  // Fmaj7
+        [261.63, 329.63, 392.00, 493.88],
+        [293.66, 349.23, 440.00, 523.25],
+        [349.23, 440.00, 523.25, 659.25]
       ];
     } else if (track.genre === 'funny-quirky') {
-      bassNotes = [130.81, 164.81, 196.00, 220.00]; // C3, E3, G3, A3
+      bassNotes = [130.81, 164.81, 196.00, 220.00];
       leadNotes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00];
     } else if (track.genre === 'arcade-retro') {
-      bassNotes = [98.00, 123.47, 146.83, 164.81]; // G2, B2, D3, E3
+      bassNotes = [98.00, 123.47, 146.83, 164.81];
       leadNotes = [392.00, 493.88, 587.33, 659.25, 783.99];
     } else { // horror-dissonant
-      bassNotes = [41.20, 43.65, 38.89]; // E1, F1, Eb1
-      leadNotes = [220.00, 233.08, 207.65]; // A3, Bb3, Ab3
+      bassNotes = [41.20, 43.65, 38.89];
+      leadNotes = [220.00, 233.08, 207.65];
     }
 
     this.timerId = window.setInterval(() => {
@@ -225,7 +255,7 @@ export class AudioService {
         bassOsc.start(now);
         bassOsc.stop(now + (intervalMs / 1000) * 0.95);
 
-        // 2. Melody / Lead Synth Channel
+        // 2. Lead Channel
         if (leadNotes.length > 0 && (step % 2 === 0 || track.genre === 'high-energy')) {
           const leadOsc = this.ctx.createOscillator();
           const leadGain = this.ctx.createGain();
@@ -234,7 +264,6 @@ export class AudioService {
           const lNote = leadNotes[(step * 3 + (track.id.charCodeAt(0) % 5)) % leadNotes.length];
           leadOsc.frequency.setValueAtTime(lNote, now);
 
-          // Fun pitch slide for quirky tracks
           if (track.genre === 'funny-quirky' && step % 4 === 0) {
             leadOsc.frequency.exponentialRampToValueAtTime(lNote * 1.2, now + 0.1);
           }
@@ -248,7 +277,7 @@ export class AudioService {
           leadOsc.stop(now + (intervalMs / 1000) * 0.85);
         }
 
-        // 3. Chord Pads Channel (for Lofi / Ambient)
+        // 3. Chord Pads
         if (chordFreqs.length > 0 && step % 4 === 0) {
           const chord = chordFreqs[(step / 4) % chordFreqs.length];
           chord.forEach(freq => {
@@ -267,9 +296,9 @@ export class AudioService {
           });
         }
 
-        // 4. Rhythm & Percussion Channel (Kick, Snare, Hi-Hat, or Rimshot)
+        // 4. Rhythm & Percussion
         if (track.genre !== 'horror-dissonant') {
-          if (step % 2 === 0) { // Kick
+          if (step % 2 === 0) {
             const kickOsc = this.ctx.createOscillator();
             const kickGain = this.ctx.createGain();
             kickOsc.frequency.setValueAtTime(140, now);
@@ -282,7 +311,7 @@ export class AudioService {
             kickGain.connect(this.musicGain);
             kickOsc.start(now);
             kickOsc.stop(now + 0.08);
-          } else { // Hi-Hat / Pop
+          } else {
             const hatBuffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.04), this.ctx.sampleRate);
             const data = hatBuffer.getChannelData(0);
             for (let i = 0; i < hatBuffer.length; i++) {
@@ -300,7 +329,7 @@ export class AudioService {
     }, intervalMs);
   }
 
-  // --- Sound Effects Pool with Randomized Pitch/Timbre Variation ---
+  // --- Sound Effects ---
   public playJumpSound() {
     this.ensureContextResumed();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
@@ -310,7 +339,7 @@ export class AudioService {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      const baseFreq = 180 + (Math.random() * 40 - 20); // Pitch variation
+      const baseFreq = 180 + (Math.random() * 40 - 20);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.8, now + 0.15);
@@ -361,8 +390,8 @@ export class AudioService {
       const gain = this.ctx.createGain();
 
       osc.type = 'square';
-      osc.frequency.setValueAtTime(987.77, now); // B5
-      osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+      osc.frequency.setValueAtTime(987.77, now);
+      osc.frequency.setValueAtTime(1318.51, now + 0.08);
 
       gain.gain.setValueAtTime(0.1, now);
       gain.gain.exponentialRampToValueAtTime(0.005, now + 0.25);

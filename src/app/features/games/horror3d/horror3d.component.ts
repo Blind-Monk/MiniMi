@@ -221,6 +221,7 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.audioService.stopMusic();
     cancelAnimationFrame(this.animFrameId);
     if (this.renderer) this.renderer.dispose();
   }
