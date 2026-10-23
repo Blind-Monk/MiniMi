@@ -330,6 +330,55 @@ export class AudioService {
   }
 
   // --- Sound Effects ---
+  public playSfx(type: 'eatDot' | 'eatPower' | 'eatFruit' | 'eatGhost' | 'death' | string) {
+    this.ensureContextResumed();
+    if (!this.ctx || !this.sfxGain || this.isMuted) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      if (type === 'eatDot') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.05);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else if (type === 'eatPower') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'eatFruit') {
+        this.playCoinSound();
+      } else if (type === 'eatGhost') {
+        this.playBoingSound();
+      } else if (type === 'death') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      } else {
+        this.playClickSound();
+      }
+    } catch {}
+  }
+
   public playJumpSound() {
     this.ensureContextResumed();
     if (!this.ctx || !this.sfxGain || this.isMuted) return;
