@@ -263,3 +263,61 @@ main.js             | main  |  1.03 MB |
 Application bundle generation complete. [0.868 seconds] - 2026-10-24T06:00:47.430Z
 
 Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [5.332 seconds] - 2026-10-24T06:28:02.710Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2305: Module '"@angular/core"' has no exported member 'FormsModule'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/games/snakes-ladders/snakes-ladders.component.ts:1:85:
+[37m      1 │ ...nit, OnDestroy, signal, inject, [32mFormsModule[37m } from '@angular/core';
+        ╵                                    [32m~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.037 seconds] - 2026-10-24T06:29:22.736Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2305: Module '"@angular/core"' has no exported member 'FormsModule'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/games/snakes-ladders/snakes-ladders.component.ts:1:85:
+[37m      1 │ ...nit, OnDestroy, signal, inject, [32mFormsModule[37m } from '@angular/core';
+        ╵                                    [32m~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  1.07 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  1.09 MB
+
+Application bundle generation complete. [1.577 seconds] - 2026-10-24T06:33:22.623Z
+
+Page reload sent to client(s).
+fatal error: all goroutines are asleep - deadlock!
+
+goroutine 1 [chan receive]:
+github.com/evanw/esbuild/internal/helpers.(*ThreadSafeWaitGroup).Wait(...)
+	github.com/evanw/esbuild/internal/helpers/waitgroup.go:36
+main.runService.func2()
+	github.com/evanw/esbuild/cmd/esbuild/service.go:114 +0x53
+main.runService(0x1)
+	github.com/evanw/esbuild/cmd/esbuild/service.go:160 +0x637
+main.main()
+	github.com/evanw/esbuild/cmd/esbuild/main.go:252 +0xb16
+
+goroutine 7 [chan receive]:
+main.runService.func1()
+	github.com/evanw/esbuild/cmd/esbuild/service.go:98 +0x45
+created by main.runService in goroutine 1
+	github.com/evanw/esbuild/cmd/esbuild/service.go:97 +0x1ce
+
+goroutine 8 [chan receive]:
+main.(*serviceType).sendRequest(0x10669e163020, {0xa10be0, 0x10669e972120})
+	github.com/evanw/esbuild/cmd/esbuild/service.go:192 +0x12b
+main.runService.func3()
+	github.com/evanw/esbuild/cmd/esbuild/service.go:125 +0x3e
+created by main.runService in goroutine 1
+	github.com/evanw/esbuild/cmd/esbuild/service.go:122 +0x2c7
