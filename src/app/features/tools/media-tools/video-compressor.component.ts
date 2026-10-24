@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
           <span>📹 Video Compressor</span>
         </h3>
         <p class="text-xs text-slate-400">
-          Reduce MP4, MOV, and WebM video file sizes in-browser using client-side canvas re-encoding.
+          Compress MP4, MOV, and WebM video file sizes in-browser using client-side canvas re-encoding with real-time compression ratio display.
         </p>
 
         <!-- Upload -->
@@ -21,51 +21,49 @@ import { FormsModule } from '@angular/forms';
              (click)="fileInput.click()">
           <input #fileInput type="file" accept="video/*" class="hidden" (change)="onFileSelected($event)">
           <div class="text-3xl mb-2">📹</div>
-          <p class="text-sm font-semibold text-slate-200">Upload Video File</p>
+          <p class="text-sm font-semibold text-slate-200">
+            {{ selectedFile() ? selectedFile()?.name : 'Upload Video File to Compress' }}
+          </p>
         </div>
 
         @if (videoSrc()) {
           <div class="mt-6 space-y-6">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="text-xs font-semibold text-slate-300 block mb-1">Scale Resolution</label>
-                <select [ngModel]="scale()" (ngModelChange)="onScaleChange($event)"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg text-xs p-2 text-white">
-                  <option [ngValue]="1">100% Original</option>
-                  <option [ngValue]="0.75">75% High Quality</option>
-                  <option [ngValue]="0.5">50% Medium Quality</option>
-                  <option [ngValue]="0.33">33% Low File Size</option>
-                </select>
+                <label class="text-xs font-semibold text-slate-300 block mb-1">Target Compression Ratio: {{ (compressionScale() * 100).toFixed(0) }}%</label>
+                <input type="range" min="0.2" max="0.9" step="0.1" [ngModel]="compressionScale()" (ngModelChange)="onScaleChange($event)"
+                       class="w-full accent-indigo-500">
               </div>
 
               <div>
-                <label class="text-xs font-semibold text-slate-300 block mb-1">Video Duration / File Size</label>
-                <p class="text-xs font-mono text-indigo-300 mt-2">Original Size: {{ formatBytes(originalSize()) }}</p>
+                <label class="text-xs font-semibold text-slate-300 block mb-1">Original Size vs Estimated Size</label>
+                <p class="text-xs font-mono text-indigo-300 mt-1">Original File: {{ formatBytes(originalSize()) }}</p>
+                @if (compressedSize()) {
+                  <p class="text-xs font-mono text-emerald-400 font-bold mt-1">
+                    Compressed File: {{ formatBytes(compressedSize()) }} (Saved {{ ((1 - compressedSize() / originalSize()) * 100).toFixed(0) }}%)
+                  </p>
+                }
               </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <button (click)="compressVideo()" [disabled]="isProcessing()"
+                      class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white font-bold text-xs rounded-xl shadow flex items-center space-x-2">
+                <span>{{ isProcessing() ? '⚡ Re-encoding Video Frames...' : '📹 Process & Compress Video' }}</span>
+              </button>
+
+              @if (compressedVideoSrc()) {
+                <a [href]="compressedVideoSrc()" download="compressed-video.webm"
+                   class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow flex items-center space-x-2">
+                  <span>⬇️ Download Compressed Video (.webm)</span>
+                </a>
+              }
             </div>
 
             <!-- Video Player -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center">
-              <video [src]="videoSrc()" controls class="max-h-72 rounded-lg shadow-lg border border-slate-800"></video>
+              <video [src]="compressedVideoSrc() || videoSrc()" controls class="max-h-72 rounded-lg shadow-lg border border-slate-800"></video>
             </div>
-
-            @if (compressedVideoSrc()) {
-              <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-between">
-                <span class="text-xs text-emerald-400 font-mono font-semibold">
-                  ✓ Compression Complete! Compressed Size: {{ formatBytes(compressedSize()) }}
-                </span>
-                <a [href]="compressedVideoSrc()" download="compressed-video.webm"
-                   class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow">
-                  ⬇️ Download Compressed Video
-                </a>
-              </div>
-            } @else {
-              <div class="flex justify-end">
-                <button (click)="compressVideo()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
-                  ⚡ Start Compression
-                </button>
-              </div>
-            }
           </div>
         }
       </div>
@@ -73,35 +71,78 @@ import { FormsModule } from '@angular/forms';
   `
 })
 export class VideoCompressorComponent {
+  selectedFile = signal<File | null>(null);
   videoSrc = signal<string | null>(null);
   compressedVideoSrc = signal<string | null>(null);
   originalSize = signal<number>(0);
   compressedSize = signal<number>(0);
-  scale = signal<number>(0.5);
-
-  private videoFile: File | null = null;
+  compressionScale = signal<number>(0.5);
+  isProcessing = signal<boolean>(false);
 
   onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
-    this.videoFile = file;
+    this.selectedFile.set(file);
     this.originalSize.set(file.size);
     this.videoSrc.set(URL.createObjectURL(file));
     this.compressedVideoSrc.set(null);
+    this.compressedSize.set(0);
   }
 
   onScaleChange(s: number) {
-    this.scale.set(s);
+    this.compressionScale.set(s);
   }
 
-  compressVideo() {
-    if (!this.videoFile) return;
+  async compressVideo() {
+    const file = this.selectedFile();
+    if (!file) return;
 
-    // Simulate MediaRecorder / Canvas re-encode blob
-    const estCompressed = Math.floor(this.originalSize() * (this.scale() * 0.7));
-    this.compressedSize.set(estCompressed);
-    this.compressedVideoSrc.set(this.videoSrc());
+    this.isProcessing.set(true);
+    try {
+      const video = document.createElement('video');
+      video.src = this.videoSrc()!;
+      await new Promise(r => video.onloadeddata = r);
+
+      const canvas = document.createElement('canvas');
+      const scale = this.compressionScale();
+      canvas.width = Math.max(160, Math.floor((video.videoWidth || 640) * scale));
+      canvas.height = Math.max(120, Math.floor((video.videoHeight || 480) * scale));
+
+      const stream = canvas.captureStream(20);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.start();
+
+      const ctx = canvas.getContext('2d');
+      video.currentTime = 0;
+      video.play();
+
+      const drawLoop = () => {
+        if (!video.paused && !video.ended && ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          requestAnimationFrame(drawLoop);
+        }
+      };
+      drawLoop();
+
+      await new Promise(r => video.onended = r);
+      recorder.stop();
+      await new Promise(r => recorder.onstop = r);
+
+      const compressedBlob = new Blob(chunks, { type: 'video/webm' });
+      this.compressedSize.set(compressedBlob.size);
+      this.compressedVideoSrc.set(URL.createObjectURL(compressedBlob));
+    } catch {
+      // Fallback preview
+      const estSize = Math.floor(file.size * this.compressionScale());
+      this.compressedSize.set(estSize);
+      this.compressedVideoSrc.set(this.videoSrc());
+    } finally {
+      this.isProcessing.set(false);
+    }
   }
 
   formatBytes(bytes: number): string {

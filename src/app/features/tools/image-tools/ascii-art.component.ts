@@ -2,6 +2,11 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+export interface AsciiChar {
+  char: string;
+  color: string;
+}
+
 @Component({
   selector: 'app-ascii-art',
   standalone: true,
@@ -13,7 +18,7 @@ import { FormsModule } from '@angular/forms';
           <span>🔤 ASCII Art Generator</span>
         </h3>
         <p class="text-xs text-slate-400">
-          Turn graphics and photos into text-based character pixel art with width controls.
+          Turn graphics and photos into text-based character pixel art with width controls, color modes, and custom color presets.
         </p>
 
         <!-- Upload -->
@@ -24,13 +29,27 @@ import { FormsModule } from '@angular/forms';
           <p class="text-sm font-semibold text-slate-200">Upload Image to Convert to ASCII Text</p>
         </div>
 
-        @if (asciiText()) {
+        @if (asciiText() || colorRows().length > 0) {
           <div class="mt-6 space-y-6">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex items-center justify-between">
-              <div>
-                <label class="text-xs font-semibold text-slate-300 block mb-1">Character Width: {{ width() }} cols</label>
-                <input type="range" min="40" max="120" step="5" [ngModel]="width()" (ngModelChange)="onWidthChange($event)"
-                       class="w-48 accent-indigo-500">
+            <!-- Controls -->
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center space-x-4">
+                <div>
+                  <label class="text-xs font-semibold text-slate-300 block mb-1">Character Width: {{ width() }} cols</label>
+                  <input type="range" min="40" max="120" step="5" [ngModel]="width()" (ngModelChange)="onWidthChange($event)"
+                         class="w-36 accent-indigo-500">
+                </div>
+
+                <div>
+                  <label class="text-xs font-semibold text-slate-300 block mb-1">Color Mode</label>
+                  <select [ngModel]="colorMode()" (ngModelChange)="onModeChange($event)"
+                          class="bg-slate-900 border border-slate-700 rounded text-xs p-1.5 text-white">
+                    <option value="mono">Monochrome (Green Matrix)</option>
+                    <option value="full">Full RGB Color</option>
+                    <option value="amber">Retro Amber</option>
+                    <option value="cyan">Cyberpunk Cyan</option>
+                  </select>
+                </div>
               </div>
 
               <button (click)="copyText()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow">
@@ -38,9 +57,25 @@ import { FormsModule } from '@angular/forms';
               </button>
             </div>
 
-            <!-- Monospace Output -->
+            <!-- Monospace Output Container -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto">
-              <pre class="font-mono text-[8px] leading-[7px] text-emerald-400 whitespace-pre tracking-tighter">{{ asciiText() }}</pre>
+              @if (colorMode() === 'full') {
+                <div class="font-mono text-[8px] leading-[7px] whitespace-pre tracking-tighter select-all">
+                  @for (row of colorRows(); track $index) {
+                    <div>
+                      @for (cell of row; track $index) {
+                        <span [style.color]="cell.color">{{ cell.char }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <pre [ngClass]="{
+                  'text-emerald-400': colorMode() === 'mono',
+                  'text-amber-400': colorMode() === 'amber',
+                  'text-cyan-400': colorMode() === 'cyan'
+                }" class="font-mono text-[8px] leading-[7px] whitespace-pre tracking-tighter select-all">{{ asciiText() }}</pre>
+              }
             </div>
           </div>
         }
@@ -50,7 +85,9 @@ import { FormsModule } from '@angular/forms';
 })
 export class AsciiArtComponent {
   asciiText = signal<string | null>(null);
+  colorRows = signal<AsciiChar[][]>([]);
   width = signal<number>(80);
+  colorMode = signal<'mono' | 'full' | 'amber' | 'cyan'>('mono');
   copyStatus = signal<string>('Copy ASCII Art');
 
   private loadedImg: HTMLImageElement | null = null;
@@ -78,6 +115,11 @@ export class AsciiArtComponent {
     this.generateAscii();
   }
 
+  onModeChange(mode: 'mono' | 'full' | 'amber' | 'cyan') {
+    this.colorMode.set(mode);
+    this.generateAscii();
+  }
+
   generateAscii() {
     if (!this.loadedImg) return;
 
@@ -96,7 +138,10 @@ export class AsciiArtComponent {
     const imgData = ctx.getImageData(0, 0, w, h).data;
 
     let ascii = '';
+    const rows: AsciiChar[][] = [];
+
     for (let y = 0; y < h; y++) {
+      const rowCells: AsciiChar[] = [];
       for (let x = 0; x < w; x++) {
         const idx = (y * w + x) * 4;
         const r = imgData[idx];
@@ -105,12 +150,17 @@ export class AsciiArtComponent {
 
         const avg = (r + g + b) / 3;
         const charIdx = Math.floor((avg / 255) * (this.charset.length - 1));
-        ascii += this.charset[charIdx];
+        const char = this.charset[charIdx];
+
+        ascii += char;
+        rowCells.push({ char, color: `rgb(${r},${g},${b})` });
       }
       ascii += '\n';
+      rows.push(rowCells);
     }
 
     this.asciiText.set(ascii);
+    this.colorRows.set(rows);
   }
 
   copyText() {

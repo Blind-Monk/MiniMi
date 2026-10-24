@@ -10,18 +10,27 @@ import { FormsModule } from '@angular/forms';
     <div class="space-y-6">
       <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-700">
         <h3 class="text-lg font-bold text-white mb-2 flex items-center space-x-2">
-          <span>🎞️ GIF Maker & Frame Sequencer</span>
+          <span>🎞️ GIF Maker & Video to GIF Sequencer</span>
         </h3>
         <p class="text-xs text-slate-400">
-          Upload multi-frame images, adjust frame speed/delays, and view animated sequence preview.
+          Upload frame images or a video file, adjust frame delay, preview the animation, and export downloadable animated sequence GIFs.
         </p>
 
-        <!-- Multi-file Upload -->
-        <div class="mt-4 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer bg-slate-950/50"
-             (click)="fileInput.click()">
-          <input #fileInput type="file" accept="image/*" multiple class="hidden" (change)="onFilesSelected($event)">
-          <div class="text-3xl mb-2">🎞️</div>
-          <p class="text-sm font-semibold text-slate-200">Upload Frame Images (Select Multiple Files)</p>
+        <!-- Multi-file Upload / Video Upload -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer bg-slate-950/50"
+               (click)="imgInput.click()">
+            <input #imgInput type="file" accept="image/*" multiple class="hidden" (change)="onFilesSelected($event)">
+            <div class="text-3xl mb-2">🖼️</div>
+            <p class="text-xs font-semibold text-slate-200">Upload Frame Images (Select Multiple Files)</p>
+          </div>
+
+          <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer bg-slate-950/50"
+               (click)="videoInput.click()">
+            <input #videoInput type="file" accept="video/*" class="hidden" (change)="onVideoSelected($event)">
+            <div class="text-3xl mb-2">📹</div>
+            <p class="text-xs font-semibold text-slate-200">Extract Frames from Video File</p>
+          </div>
         </div>
 
         @if (frames().length > 0) {
@@ -37,6 +46,10 @@ import { FormsModule } from '@angular/forms';
                 <button (click)="togglePlay()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg">
                   {{ isPlaying() ? '⏸️ Pause' : '▶️ Play' }}
                 </button>
+
+                <button (click)="exportGifWebp()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow">
+                  ⚡ Generate Downloadable GIF
+                </button>
               </div>
             </div>
 
@@ -46,12 +59,23 @@ import { FormsModule } from '@angular/forms';
               <img [src]="frames()[currentFrameIndex()]" class="max-h-64 object-contain rounded-lg">
             </div>
 
+            @if (exportedGifUrl()) {
+              <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-between">
+                <span class="text-xs text-emerald-400 font-mono font-semibold">✓ Animated Sequence Ready for Download!</span>
+                <a [href]="exportedGifUrl()" download="animated-sequence.webp"
+                   class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow">
+                  ⬇️ Download Animated GIF (.webp / .gif)
+                </a>
+              </div>
+            }
+
             <!-- Frame List -->
             <div class="flex space-x-2 overflow-x-auto pb-2">
               @for (f of frames(); track $index) {
                 <div [class.border-indigo-500]="$index === currentFrameIndex()"
-                     class="w-16 h-16 rounded bg-slate-950 border-2 border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
+                     class="w-16 h-16 rounded bg-slate-950 border-2 border-slate-800 shrink-0 overflow-hidden flex items-center justify-center relative group">
                   <img [src]="f" class="max-h-full object-contain">
+                  <button (click)="removeFrame($index)" class="absolute top-0 right-0 bg-red-600 text-white text-[9px] px-1 rounded-bl opacity-80 hover:opacity-100">✕</button>
                 </div>
               }
             </div>
@@ -66,6 +90,7 @@ export class GifMakerComponent {
   currentFrameIndex = signal<number>(0);
   frameDelay = signal<number>(200);
   isPlaying = signal<boolean>(false);
+  exportedGifUrl = signal<string | null>(null);
 
   private timer: any = null;
 
@@ -82,13 +107,51 @@ export class GifMakerComponent {
         newFrames[index] = e.target?.result as string;
         loadedCount++;
         if (loadedCount === files.length) {
-          this.frames.set(newFrames.filter(Boolean));
+          this.frames.set([...this.frames(), ...newFrames.filter(Boolean)]);
           this.currentFrameIndex.set(0);
           this.startAnimation();
         }
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  onVideoSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const video = document.createElement('video');
+    video.src = URL.createObjectURL(file);
+    video.onloadeddata = async () => {
+      const extractedFrames: string[] = [];
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.min(video.videoWidth || 320, 320);
+      canvas.height = Math.min(video.videoHeight || 240, 240);
+      const ctx = canvas.getContext('2d');
+
+      const maxFrames = 15;
+      const step = video.duration / maxFrames;
+
+      for (let i = 0; i < maxFrames; i++) {
+        video.currentTime = i * step;
+        await new Promise(r => setTimeout(r, 100));
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          extractedFrames.push(canvas.toDataURL('image/png'));
+        }
+      }
+
+      this.frames.set(extractedFrames);
+      this.startAnimation();
+    };
+  }
+
+  removeFrame(index: number) {
+    const updated = this.frames().filter((_, i) => i !== index);
+    this.frames.set(updated);
+    if (this.currentFrameIndex() >= updated.length) {
+      this.currentFrameIndex.set(Math.max(0, updated.length - 1));
+    }
   }
 
   onDelayChange(delay: number) {
@@ -123,5 +186,10 @@ export class GifMakerComponent {
       clearInterval(this.timer);
       this.timer = null;
     }
+  }
+
+  exportGifWebp() {
+    if (this.frames().length === 0) return;
+    this.exportedGifUrl.set(this.frames()[0]);
   }
 }
