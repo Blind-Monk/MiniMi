@@ -17,14 +17,15 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
           <span class="text-2xl">🍄</span>
           <div>
             <h2 class="text-base font-extrabold text-red-500">SUPER PLUMBER 3D (PLATFORMER)</h2>
-            <p class="text-xs text-slate-400">Jump, Collect Coins & Avoid Enemy Obstacles</p>
+            <p class="text-xs text-slate-400">Coyote-Time Jump Physics • Stomp Enemies & Collect Coins</p>
           </div>
         </div>
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-amber-400 text-sm">🪙 Coins: {{ coins() }}</div>
+          <div class="text-red-400 text-sm">❤️ Lives: {{ lives() }}</div>
           <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
-            ⛶
+            ⛶ Fullscreen
           </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
@@ -37,15 +38,15 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
         <canvas #canvas class="w-full h-full block cursor-pointer"></canvas>
 
         <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300 pointer-events-none">
-          🎮 Controls: WASD or Arrow Keys to Move • Spacebar to Jump
+          🎮 Controls: WASD/Arrows to Move • Spacebar to Jump & Stomp Goombas
         </div>
 
         <!-- Touch Controls for Mobile Devices -->
-        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
-          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
-          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
-          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
-          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
+        <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+          <button (touchstart)="movePlayer('w')" (mousedown)="movePlayer('w')" class="w-12 h-12 bg-slate-800/90 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" (mousedown)="movePlayer('s')" class="w-12 h-12 bg-slate-800/90 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" (mousedown)="movePlayer('a')" class="w-12 h-12 bg-slate-800/90 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" (mousedown)="movePlayer('d')" class="w-12 h-12 bg-slate-800/90 active:bg-red-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
           <button (click)="jump()" class="w-14 h-12 bg-red-600 active:bg-red-500 text-white font-black rounded-xl shadow-lg border border-red-400">🦘</button>
         </div>
 
@@ -70,6 +71,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   private audioService = inject(AudioService);
 
   coins = signal<number>(0);
+  lives = signal<number>(3);
   gameOver = signal<boolean>(false);
 
   private scene!: THREE.Scene;
@@ -83,7 +85,13 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   private velY = 0;
   private isGrounded = true;
 
+  // Coyote Time & Jump Buffering
+  private coyoteTimer = 0;
+  private jumpBufferTimer = 0;
+
   private coinsMeshes: THREE.Mesh[] = [];
+  private enemyMeshes: THREE.Mesh[] = [];
+
   private activeKeys = new Set<string>();
   private animFrameId: number = 0;
 
@@ -103,6 +111,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   restartGame() {
     this.audioService.playClickSound();
     this.coins.set(0);
+    this.lives.set(3);
     this.gameOver.set(false);
     this.posX = 0;
     this.posY = 0.5;
@@ -113,11 +122,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   }
 
   jump() {
-    if (this.isGrounded) {
-      this.velY = 0.25;
-      this.isGrounded = false;
-      this.audioService.playJumpSound();
-    }
+    this.jumpBufferTimer = 0.15; // 150ms jump buffering
   }
 
   movePlayer(dir: string) {
@@ -143,7 +148,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     const container = this.containerRef.nativeElement;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x38bdf8); // Sky blue
+    this.scene.background = new THREE.Color(0x38bdf8);
 
     this.camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
 
@@ -160,7 +165,7 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
 
     // Player (Red Plumber Sphere)
     const pGeo = new THREE.SphereGeometry(0.5, 16, 16);
-    const pMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+    const pMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
     this.playerMesh = new THREE.Mesh(pGeo, pMat);
     this.playerMesh.position.set(0, 0.5, 0);
     this.scene.add(this.playerMesh);
@@ -173,12 +178,14 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   }
 
   private buildLevel() {
-    // Floating Grass Platforms
     const platGeo = new THREE.BoxGeometry(4, 0.4, 4);
     const platMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
 
     const coinGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 12);
     const coinMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
+
+    const enemyGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.6, 12);
+    const enemyMat = new THREE.MeshStandardMaterial({ color: 0x854d0e });
 
     for (let i = 0; i < 15; i++) {
       const px = (i % 5) * 5 - 10;
@@ -193,6 +200,14 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
       coin.rotation.x = Math.PI / 2;
       this.coinsMeshes.push(coin);
       this.scene.add(coin);
+
+      // Add Goomba Enemy on some platforms
+      if (i > 1 && i % 2 === 0) {
+        const enemy = new THREE.Mesh(enemyGeo, enemyMat);
+        enemy.position.set(px + 1, 0.5, pz);
+        this.enemyMeshes.push(enemy);
+        this.scene.add(enemy);
+      }
     }
   }
 
@@ -208,6 +223,8 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
   private updatePhysics() {
     if (this.gameOver()) return;
 
+    const dt = 0.016;
+
     // Movement Controls
     const speed = 0.12;
     if (this.activeKeys.has('ArrowLeft') || this.activeKeys.has('a')) this.posX -= speed;
@@ -215,9 +232,26 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
     if (this.activeKeys.has('ArrowUp') || this.activeKeys.has('w')) this.posZ -= speed;
     if (this.activeKeys.has('ArrowDown') || this.activeKeys.has('s')) this.posZ += speed;
 
-    // Jump Logic
     if (this.activeKeys.has(' ')) {
       this.jump();
+    }
+
+    // Timers
+    if (this.isGrounded) {
+      this.coyoteTimer = 0.12; // 120ms coyote time
+    } else {
+      this.coyoteTimer -= dt;
+    }
+
+    if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer -= dt;
+      if (this.coyoteTimer > 0) {
+        this.velY = 0.28;
+        this.isGrounded = false;
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+        this.audioService.playJumpSound();
+      }
     }
 
     // Gravity
@@ -230,15 +264,21 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
       this.isGrounded = true;
     }
 
-    // Fall death check
     if (this.posY < -5) {
-      this.gameOver.set(true);
-      this.audioService.playExplosionSound();
+      this.lives.update(l => l - 1);
+      if (this.lives() <= 0) {
+        this.gameOver.set(true);
+        this.audioService.playExplosionSound();
+      } else {
+        this.posX = 0;
+        this.posY = 0.5;
+        this.posZ = 0;
+        this.velY = 0;
+      }
     }
 
     this.playerMesh.position.set(this.posX, this.posY, this.posZ);
 
-    // Camera follow
     this.camera.position.set(this.posX, this.posY + 3, this.posZ + 8);
     this.camera.lookAt(this.posX, this.posY, this.posZ);
 
@@ -248,6 +288,18 @@ export class Mario3dComponent implements AfterViewInit, OnDestroy {
         coin.visible = false;
         this.coins.update(c => c + 1);
         this.audioService.playCoinSound();
+      }
+    });
+
+    // Enemy Stomp Collision Check
+    this.enemyMeshes.forEach((enemy) => {
+      if (enemy.visible && Math.hypot(enemy.position.x - this.posX, enemy.position.z - this.posZ) < 0.8) {
+        if (this.velY < 0 && this.posY > 0.6) { // Stomp from above
+          enemy.visible = false;
+          this.velY = 0.2; // Stomp bounce
+          this.coins.update(c => c + 5);
+          this.audioService.playExplosionSound();
+        }
       }
     });
   }
