@@ -88,9 +88,9 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'Project Vanguard (3D Tactical FPS)',
     category: 'games',
     subcategory: '3D Action / FPS',
-    description: 'Tactical FPS with target elimination, crosshair HUD, virtual touch look/fire overlay for mobile, and tactical high-energy soundtrack.',
+    description: 'Tactical FPS with target elimination, suppressor noise mechanics, mobile touch controls, and high-energy soundtrack.',
     icon: '🎯',
-    tags: ['3D', 'FPS', 'Action', 'Shooter', 'Tactical Audio', 'Popular'],
+    tags: ['3D', 'FPS', 'Action', 'Shooter', 'Stealth', 'Tactical Audio', 'Popular'],
     isPopular: true,
     audioPlaylist: 'high-energy'
   },

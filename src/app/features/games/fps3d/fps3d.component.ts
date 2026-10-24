@@ -17,15 +17,21 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
           <span class="text-2xl">🎯</span>
           <div>
             <h2 class="text-base font-extrabold text-emerald-400">PROJECT VANGUARD (3D TACTICAL FPS)</h2>
-            <p class="text-xs text-slate-400">Tactical First-Person Shooter • Mission Objectives & Enemy Targets</p>
+            <p class="text-xs text-slate-400">Tactical First-Person Stealth FPS • Light Visibility & Weapon Noise Radius</p>
           </div>
         </div>
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-red-400 text-sm">❤️ Health: {{ health() }}%</div>
           <div class="text-amber-400 text-sm">🎯 Targets: {{ score() }}/10</div>
+          <div [class]="isSuppressed() ? 'text-teal-300' : 'text-orange-400'" class="text-xs font-mono">
+            {{ isSuppressed() ? '🔇 Suppressed (15m)' : '📢 Loud (200m)' }}
+          </div>
+          <button (click)="toggleSuppressor()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-bold">
+            ⚡ {{ isSuppressed() ? 'Detach Suppressor' : 'Attach Suppressor' }}
+          </button>
           <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
-            ⛶
+            ⛶ Fullscreen
           </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
@@ -46,20 +52,20 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
 
         <!-- Controls Info Overlay -->
         <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300 pointer-events-none">
-          🎯 Desktop: WASD to Walk • Click Canvas to Shoot Targets
+          🎯 Controls: WASD/Arrows to Walk • Click Canvas to Fire • Attach Suppressor for Silent Infiltration
         </div>
 
         <!-- Touch Controls for Mobile Devices -->
-        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
-          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
-          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
-          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
-          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
+        <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+          <button (touchstart)="movePlayer('w')" (mousedown)="movePlayer('w')" class="w-12 h-12 bg-slate-800/90 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" (mousedown)="movePlayer('s')" class="w-12 h-12 bg-slate-800/90 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" (mousedown)="movePlayer('a')" class="w-12 h-12 bg-slate-800/90 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" (mousedown)="movePlayer('d')" class="w-12 h-12 bg-slate-800/90 active:bg-emerald-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
           <button (click)="fireWeapon()" class="w-14 h-12 bg-red-600 active:bg-red-500 text-white font-black rounded-xl shadow-lg border border-red-400">🔥</button>
         </div>
 
         @if (gameOver()) {
-          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center">
+          <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center gap-3 text-center z-20">
             <span class="text-5xl">🎯</span>
             <h2 class="text-3xl font-black text-emerald-400">MISSION ACCOMPLISHED!</h2>
             <p class="text-slate-300 text-sm">Eliminated all enemy targets successfully.</p>
@@ -80,6 +86,7 @@ export class Fps3dComponent implements AfterViewInit, OnDestroy {
 
   health = signal<number>(100);
   score = signal<number>(0);
+  isSuppressed = signal<boolean>(true);
   gameOver = signal<boolean>(false);
 
   private scene!: THREE.Scene;
@@ -107,6 +114,11 @@ export class Fps3dComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  toggleSuppressor() {
+    this.isSuppressed.update(s => !s);
+    this.audioService.playClickSound();
+  }
+
   restartGame() {
     this.audioService.playClickSound();
     this.health.set(100);
@@ -121,7 +133,12 @@ export class Fps3dComponent implements AfterViewInit, OnDestroy {
 
   fireWeapon() {
     if (this.gameOver()) return;
-    this.audioService.playExplosionSound();
+
+    if (this.isSuppressed()) {
+      this.audioService.playCoinSound();
+    } else {
+      this.audioService.playExplosionSound();
+    }
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const hits = this.raycaster.intersectObjects(this.targets);
@@ -178,7 +195,6 @@ export class Fps3dComponent implements AfterViewInit, OnDestroy {
     dir.position.set(10, 20, 10);
     this.scene.add(dir);
 
-    // Compound Wall Enclosure
     const floorGeo = new THREE.PlaneGeometry(60, 60);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
