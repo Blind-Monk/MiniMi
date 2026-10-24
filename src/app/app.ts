@@ -23,6 +23,7 @@ import { Rts0adComponent } from './features/games/rts-0ad/rts-0ad.component';
 import { UniversalGameEngineComponent } from './features/games/universal-game-engine/universal-game-engine.component';
 
 // Import Developer & Security Tools
+import { CodeCompilerComponent } from './features/tools/code-compiler/code-compiler.component';
 import { JsonFormatterComponent } from './features/tools/json-formatter/json-formatter.component';
 import { Base64Component } from './features/tools/base64/base64.component';
 import { QrGenComponent } from './features/tools/qr-gen/qr-gen.component';
@@ -31,6 +32,111 @@ import { PassGenComponent } from './features/tools/pass-gen/pass-gen.component';
 import { RegexTesterComponent } from './features/tools/regex-tester/regex-tester.component';
 import { PdfToolsComponent } from './features/tools/pdf-tools/pdf-tools.component';
 import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/invoice-generator.component';
+
+// Import 100 Expanded Tools
+import { ImageCompressorComponent } from './features/tools/image-tools/image-compressor.component';
+import { ImageConverterComponent } from './features/tools/image-tools/image-converter.component';
+import { ImageResizerComponent } from './features/tools/image-tools/image-resizer.component';
+import { ImageCropperComponent } from './features/tools/image-tools/image-cropper.component';
+import { ImageBlenderComponent } from './features/tools/image-tools/image-blender.component';
+import { SvgConverterComponent } from './features/tools/image-tools/svg-converter.component';
+import { FaviconGenComponent } from './features/tools/image-tools/favicon-gen.component';
+import { PaletteExtractorComponent } from './features/tools/image-tools/palette-extractor.component';
+import { BgRemoverComponent } from './features/tools/image-tools/bg-remover.component';
+import { WatermarkAdderComponent } from './features/tools/image-tools/watermark-adder.component';
+import { GifMakerComponent } from './features/tools/image-tools/gif-maker.component';
+import { ExifViewerComponent } from './features/tools/image-tools/exif-viewer.component';
+import { AsciiArtComponent } from './features/tools/image-tools/ascii-art.component';
+import { PixelArtComponent } from './features/tools/image-tools/pixel-art.component';
+import { ImageBlurComponent } from './features/tools/image-tools/image-blur.component';
+import { VideoCompressorComponent } from './features/tools/media-tools/video-compressor.component';
+import { VideoConverterComponent } from './features/tools/media-tools/video-converter.component';
+import { VideoToGifComponent } from './features/tools/media-tools/video-to-gif.component';
+import { VideoTrimmerComponent } from './features/tools/media-tools/video-trimmer.component';
+import { AudioCompressorComponent } from './features/tools/media-tools/audio-compressor.component';
+import { AudioConverterComponent } from './features/tools/media-tools/audio-converter.component';
+import { AudioCutterComponent } from './features/tools/media-tools/audio-cutter.component';
+import { PitchSpeedChangerComponent } from './features/tools/media-tools/pitch-speed-changer.component';
+import { ToneGeneratorComponent } from './features/tools/media-tools/tone-generator.component';
+import { InstrumentTunerComponent } from './features/tools/media-tools/instrument-tuner.component';
+import { MetronomeComponent } from './features/tools/media-tools/metronome.component';
+import { AudioBoosterComponent } from './features/tools/media-tools/audio-booster.component';
+import { VideoFrameExtractorComponent } from './features/tools/media-tools/video-frame-extractor.component';
+import { SqlFormatterComponent } from './features/tools/code-tools/sql-formatter.component';
+import { HtmlFormatterComponent } from './features/tools/code-tools/html-formatter.component';
+import { CssFormatterComponent } from './features/tools/code-tools/css-formatter.component';
+import { JsMinifierComponent } from './features/tools/code-tools/js-minifier.component';
+import { XmlViewerComponent } from './features/tools/code-tools/xml-viewer.component';
+import { YamlJsonComponent } from './features/tools/code-tools/yaml-json.component';
+import { JsonCsvComponent } from './features/tools/code-tools/json-csv.component';
+import { JsonTypesComponent } from './features/tools/code-tools/json-types.component';
+import { MarkdownEditorComponent } from './features/tools/code-tools/markdown-editor.component';
+import { LatexEditorComponent } from './features/tools/code-tools/latex-editor.component';
+import { CurlConverterComponent } from './features/tools/code-tools/curl-converter.component';
+import { GraphqlValidatorComponent } from './features/tools/code-tools/graphql-validator.component';
+import { TomlJsonComponent } from './features/tools/code-tools/toml-json.component';
+import { PlistJsonComponent } from './features/tools/code-tools/plist-json.component';
+import { SqlSchemaVisualizerComponent } from './features/tools/code-tools/sql-schema-visualizer.component';
+import { TextDiffComponent } from './features/tools/text-tools/text-diff.component';
+import { CaseConverterComponent } from './features/tools/text-tools/case-converter.component';
+import { LineSortDedupeComponent } from './features/tools/text-tools/line-sort-dedupe.component';
+import { TextInspectorComponent } from './features/tools/text-tools/text-inspector.component';
+import { HtmlEntityComponent } from './features/tools/text-tools/html-entity.component';
+import { UrlEncoderComponent } from './features/tools/text-tools/url-encoder.component';
+import { BackslashEscapeComponent } from './features/tools/text-tools/backslash-escape.component';
+import { LoremIpsumComponent } from './features/tools/text-tools/lorem-ipsum.component';
+import { FindReplaceRegexComponent } from './features/tools/text-tools/find-replace-regex.component';
+import { SlugifyComponent } from './features/tools/text-tools/slugify.component';
+import { TextReverseComponent } from './features/tools/text-tools/text-reverse.component';
+import { CsvMarkdownTableComponent } from './features/tools/text-tools/csv-markdown-table.component';
+import { JwtDebuggerComponent } from './features/tools/security-tools/jwt-debugger.component';
+import { Base3258Component } from './features/tools/security-tools/base32-58.component';
+import { HexAsciiComponent } from './features/tools/security-tools/hex-ascii.component';
+import { BinaryTranslatorComponent } from './features/tools/security-tools/binary-translator.component';
+import { MorseCodeComponent } from './features/tools/security-tools/morse-code.component';
+import { RsaGenComponent } from './features/tools/security-tools/rsa-gen.component';
+import { X509DecoderComponent } from './features/tools/security-tools/x509-decoder.component';
+import { HmacGenComponent } from './features/tools/security-tools/hmac-gen.component';
+import { UuidGenComponent } from './features/tools/security-tools/uuid-gen.component';
+import { BcryptComponent } from './features/tools/security-tools/bcrypt.component';
+import { EpochConverterComponent } from './features/tools/math-tools/epoch-converter.component';
+import { TimezonePlannerComponent } from './features/tools/math-tools/timezone-planner.component';
+import { CronParserComponent } from './features/tools/math-tools/cron-parser.component';
+import { TimerStopwatchComponent } from './features/tools/math-tools/timer-stopwatch.component';
+import { PercentageCalcComponent } from './features/tools/math-tools/percentage-calc.component';
+import { NumberBaseComponent } from './features/tools/math-tools/number-base.component';
+import { UnitConverterComponent } from './features/tools/math-tools/unit-converter.component';
+import { SubnetCalcComponent } from './features/tools/math-tools/subnet-calc.component';
+import { AspectRatioCalcComponent } from './features/tools/math-tools/aspect-ratio-calc.component';
+import { ColorConverterComponent } from './features/tools/math-tools/color-converter.component';
+import { PdfMergeSplitComponent } from './features/tools/doc-tools/pdf-merge-split.component';
+import { PdfRotateComponent } from './features/tools/doc-tools/pdf-rotate.component';
+import { PdfImagesComponent } from './features/tools/doc-tools/pdf-images.component';
+import { PdfWatermarkComponent } from './features/tools/doc-tools/pdf-watermark.component';
+import { PdfRedactComponent } from './features/tools/doc-tools/pdf-redact.component';
+import { MarkdownPdfComponent } from './features/tools/doc-tools/markdown-pdf.component';
+import { SpreadsheetViewerComponent } from './features/tools/doc-tools/spreadsheet-viewer.component';
+import { ResumeParserComponent } from './features/tools/doc-tools/resume-parser.component';
+import { ResumeBuilderComponent } from './features/tools/doc-tools/resume-builder.component';
+import { CssGradientComponent } from './features/tools/design-tools/css-gradient.component';
+import { CssShadowComponent } from './features/tools/design-tools/css-shadow.component';
+import { BorderRadiusComponent } from './features/tools/design-tools/border-radius.component';
+import { GlassNeumorphismComponent } from './features/tools/design-tools/glass-neumorphism.component';
+import { SvgBlobComponent } from './features/tools/design-tools/svg-blob.component';
+import { CubicBezierComponent } from './features/tools/design-tools/cubic-bezier.component';
+import { WcagContrastComponent } from './features/tools/design-tools/wcag-contrast.component';
+import { FlexboxGridComponent } from './features/tools/design-tools/flexbox-grid.component';
+import { WhatIsMyIpComponent } from './features/tools/network-tools/what-is-my-ip.component';
+import { DnsLookupComponent } from './features/tools/network-tools/dns-lookup.component';
+import { UrlParserComponent } from './features/tools/network-tools/url-parser.component';
+import { HttpStatusGuideComponent } from './features/tools/network-tools/http-status-guide.component';
+import { UserAgentParserComponent } from './features/tools/network-tools/user-agent-parser.component';
+import { RobotsSitemapComponent } from './features/tools/network-tools/robots-sitemap.component';
+import { OpenGraphInspectorComponent } from './features/tools/network-tools/open-graph-inspector.component';
+import { MetaTagsGenComponent } from './features/tools/network-tools/meta-tags-gen.component';
+import { CpsReactionTestComponent } from './features/tools/productivity-tools/cps-reaction-test.component';
+import { KanbanBoardComponent } from './features/tools/productivity-tools/kanban-board.component';
+
 
 @Component({
   selector: 'app-root',
@@ -52,6 +158,7 @@ import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/in
     MazeMuncherComponent,
     Rts0adComponent,
     UniversalGameEngineComponent,
+    CodeCompilerComponent,
     JsonFormatterComponent,
     Base64Component,
     QrGenComponent,
@@ -59,7 +166,109 @@ import { InvoiceGeneratorComponent } from './features/tools/invoice-generator/in
     PassGenComponent,
     RegexTesterComponent,
     PdfToolsComponent,
-    InvoiceGeneratorComponent
+    InvoiceGeneratorComponent,
+    ImageCompressorComponent,
+    ImageConverterComponent,
+    ImageResizerComponent,
+    ImageCropperComponent,
+    ImageBlenderComponent,
+    SvgConverterComponent,
+    FaviconGenComponent,
+    PaletteExtractorComponent,
+    BgRemoverComponent,
+    WatermarkAdderComponent,
+    GifMakerComponent,
+    ExifViewerComponent,
+    AsciiArtComponent,
+    PixelArtComponent,
+    ImageBlurComponent,
+    VideoCompressorComponent,
+    VideoConverterComponent,
+    VideoToGifComponent,
+    VideoTrimmerComponent,
+    AudioCompressorComponent,
+    AudioConverterComponent,
+    AudioCutterComponent,
+    PitchSpeedChangerComponent,
+    ToneGeneratorComponent,
+    InstrumentTunerComponent,
+    MetronomeComponent,
+    AudioBoosterComponent,
+    VideoFrameExtractorComponent,
+    SqlFormatterComponent,
+    HtmlFormatterComponent,
+    CssFormatterComponent,
+    JsMinifierComponent,
+    XmlViewerComponent,
+    YamlJsonComponent,
+    JsonCsvComponent,
+    JsonTypesComponent,
+    MarkdownEditorComponent,
+    LatexEditorComponent,
+    CurlConverterComponent,
+    GraphqlValidatorComponent,
+    TomlJsonComponent,
+    PlistJsonComponent,
+    SqlSchemaVisualizerComponent,
+    TextDiffComponent,
+    CaseConverterComponent,
+    LineSortDedupeComponent,
+    TextInspectorComponent,
+    HtmlEntityComponent,
+    UrlEncoderComponent,
+    BackslashEscapeComponent,
+    LoremIpsumComponent,
+    FindReplaceRegexComponent,
+    SlugifyComponent,
+    TextReverseComponent,
+    CsvMarkdownTableComponent,
+    JwtDebuggerComponent,
+    Base3258Component,
+    HexAsciiComponent,
+    BinaryTranslatorComponent,
+    MorseCodeComponent,
+    RsaGenComponent,
+    X509DecoderComponent,
+    HmacGenComponent,
+    UuidGenComponent,
+    BcryptComponent,
+    EpochConverterComponent,
+    TimezonePlannerComponent,
+    CronParserComponent,
+    TimerStopwatchComponent,
+    PercentageCalcComponent,
+    NumberBaseComponent,
+    UnitConverterComponent,
+    SubnetCalcComponent,
+    AspectRatioCalcComponent,
+    ColorConverterComponent,
+    PdfMergeSplitComponent,
+    PdfRotateComponent,
+    PdfImagesComponent,
+    PdfWatermarkComponent,
+    PdfRedactComponent,
+    MarkdownPdfComponent,
+    SpreadsheetViewerComponent,
+    ResumeParserComponent,
+    ResumeBuilderComponent,
+    CssGradientComponent,
+    CssShadowComponent,
+    BorderRadiusComponent,
+    GlassNeumorphismComponent,
+    SvgBlobComponent,
+    CubicBezierComponent,
+    WcagContrastComponent,
+    FlexboxGridComponent,
+    WhatIsMyIpComponent,
+    DnsLookupComponent,
+    UrlParserComponent,
+    HttpStatusGuideComponent,
+    UserAgentParserComponent,
+    RobotsSitemapComponent,
+    OpenGraphInspectorComponent,
+    MetaTagsGenComponent,
+    CpsReactionTestComponent,
+    KanbanBoardComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -86,17 +295,57 @@ export class App {
 
   allItems = CATALOG_ITEMS;
 
+  private synonymMap: Record<string, string[]> = {
+    'size': ['compress', 'resize', 'dimension', 'reduce', 'shrink', 'quality'],
+    'pdf size': ['pdf-tools', 'img-compress', 'pdf-merge-split'],
+    'paint': ['pixel-art', 'img-blur', 'draw', 'sketch', 'canvas'],
+    'draw': ['pixel-art', 'svg-blob', 'kanban-board'],
+    'hash': ['hash-gen', 'bcrypt-hasher', 'hmac-gen', 'sha256', 'crypto'],
+    'secret': ['pass-gen', 'base64', 'jwt-debugger', 'rsa-gen', 'bcrypt-hasher'],
+    'encrypt': ['base64', 'jwt-debugger', 'rsa-gen', 'hmac-gen', 'bcrypt-hasher'],
+    'photo': ['img-compress', 'img-convert', 'img-resize', 'img-crop', 'exif-viewer', 'bg-remove'],
+    'sound': ['audio-compress', 'audio-convert', 'audio-cut', 'pitch-speed', 'tone-gen', 'instrument-tuner', 'metronome', 'volume-booster'],
+    'music': ['audio-cut', 'pitch-speed', 'tone-gen', 'instrument-tuner', 'metronome'],
+    'tune': ['instrument-tuner', 'metronome', 'pitch-speed'],
+    'clock': ['epoch-converter', 'timezone-planner', 'timer-stopwatch', 'cron-parser'],
+    'code': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'xml-viewer', 'json-types', 'curl-converter', 'latex-editor'],
+    'beautify': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'xml-viewer', 'json-formatter'],
+    'minify': ['sql-format', 'html-format', 'css-format', 'js-minifier', 'json-formatter'],
+    'web': ['what-is-my-ip', 'dns-lookup', 'url-parser', 'http-status-guide', 'user-agent-parser', 'robots-sitemap-validator', 'open-graph-inspector', 'meta-tags-gen'],
+    'ip': ['what-is-my-ip', 'subnet-calc', 'dns-lookup'],
+    'math': ['percentage-calc', 'number-base', 'unit-converter', 'subnet-calc', 'aspect-ratio-calc'],
+    'css': ['css-gradient', 'css-shadow', 'border-radius', 'glass-neumorphism', 'cubic-bezier', 'wcag-contrast', 'flexbox-grid'],
+    'style': ['css-gradient', 'css-shadow', 'border-radius', 'glass-neumorphism', 'flexbox-grid']
+  };
+
   filteredItems = computed(() => {
     const category = this.activeCategory();
     const query = this.searchQuery().toLowerCase().trim();
 
     return this.allItems.filter(item => {
-      const matchesCategory = item.category === category;
-      const matchesQuery = !query ||
-        item.name.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query) ||
-        item.tags.some(tag => tag.toLowerCase().includes(query));
-      return matchesCategory && matchesQuery;
+      if (item.category !== category) return false;
+      if (!query) return true;
+
+      const itemText = `${item.id} ${item.name} ${item.subcategory} ${item.description} ${item.tags.join(' ')}`.toLowerCase();
+
+      // 1. Direct substring match
+      if (itemText.includes(query)) return true;
+
+      // 2. Tokenized match (all query tokens found in itemText)
+      const queryTokens = query.split(/\s+/).filter(Boolean);
+      const allTokensMatch = queryTokens.every(token => itemText.includes(token));
+      if (allTokensMatch) return true;
+
+      // 3. Synonym / Related term match
+      for (const [key, synonyms] of Object.entries(this.synonymMap)) {
+        if (query.includes(key) || key.includes(query)) {
+          if (synonyms.some(syn => item.id === syn || itemText.includes(syn))) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     });
   });
 

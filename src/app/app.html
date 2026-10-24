@@ -168,6 +168,9 @@
             @case ('2048') { <app-game2048 /> }
             @case ('maze-muncher') { <app-maze-muncher /> }
             @case ('0ad') { <app-rts-0ad /> }
+            @case ('html-compiler') { <app-code-compiler [initialMode]="'html'" /> }
+            @case ('md-compiler') { <app-code-compiler [initialMode]="'markdown'" /> }
+            @case ('code-compiler') { <app-code-compiler [initialMode]="'script'" /> }
             @case ('json-formatter') { <app-json-formatter /> }
             @case ('base64') { <app-base64 /> }
             @case ('qr-gen') { <app-qr-gen /> }
@@ -176,6 +179,109 @@
             @case ('regex-tester') { <app-regex-tester /> }
             @case ('pdf-tools') { <app-pdf-tools /> }
             @case ('invoice-generator') { <app-invoice-generator /> }
+            @case ('img-compress') { <app-image-compressor /> }
+            @case ('img-convert') { <app-image-converter /> }
+            @case ('img-resize') { <app-image-resizer /> }
+            @case ('img-crop') { <app-image-cropper /> }
+            @case ('img-blend') { <app-image-blender /> }
+            @case ('svg-convert') { <app-svg-converter /> }
+            @case ('favicon-gen') { <app-favicon-gen /> }
+            @case ('palette-extract') { <app-palette-extractor /> }
+            @case ('bg-remove') { <app-bg-remover /> }
+            @case ('watermark-add') { <app-watermark-adder /> }
+            @case ('gif-maker') { <app-gif-maker /> }
+            @case ('exif-viewer') { <app-exif-viewer /> }
+            @case ('ascii-art') { <app-ascii-art /> }
+            @case ('pixel-art') { <app-pixel-art /> }
+            @case ('img-blur') { <app-image-blur /> }
+            @case ('video-compress') { <app-video-compressor /> }
+            @case ('video-convert') { <app-video-converter /> }
+            @case ('video-gif') { <app-video-to-gif /> }
+            @case ('video-trim') { <app-video-trimmer /> }
+            @case ('audio-compress') { <app-audio-compressor /> }
+            @case ('audio-convert') { <app-audio-converter /> }
+            @case ('audio-cut') { <app-audio-cutter /> }
+            @case ('pitch-speed') { <app-pitch-speed-changer /> }
+            @case ('tone-gen') { <app-tone-generator /> }
+            @case ('instrument-tuner') { <app-instrument-tuner /> }
+            @case ('metronome') { <app-metronome /> }
+            @case ('volume-booster') { <app-audio-booster /> }
+            @case ('video-frame-extract') { <app-video-frame-extractor /> }
+            @case ('sql-format') { <app-sql-formatter /> }
+            @case ('html-format') { <app-html-formatter /> }
+            @case ('css-format') { <app-css-formatter /> }
+            @case ('js-minifier') { <app-js-minifier /> }
+            @case ('xml-viewer') { <app-xml-viewer /> }
+            @case ('yaml-json') { <app-yaml-json /> }
+            @case ('json-csv') { <app-json-csv /> }
+            @case ('json-types') { <app-json-types /> }
+            @case ('markdown-editor') { <app-markdown-editor /> }
+            @case ('latex-editor') { <app-latex-editor /> }
+            @case ('curl-converter') { <app-curl-converter /> }
+            @case ('graphql-validator') { <app-graphql-validator /> }
+            @case ('toml-json') { <app-toml-json /> }
+            @case ('plist-json') { <app-plist-json /> }
+            @case ('sql-schema-visualizer') { <app-sql-schema-visualizer /> }
+            @case ('text-diff') { <app-text-diff /> }
+            @case ('case-converter') { <app-case-converter /> }
+            @case ('line-sort-dedupe') { <app-line-sort-dedupe /> }
+            @case ('text-inspector') { <app-text-inspector /> }
+            @case ('html-entity') { <app-html-entity /> }
+            @case ('url-encoder') { <app-url-encoder /> }
+            @case ('backslash-escape') { <app-backslash-escape /> }
+            @case ('lorem-ipsum') { <app-lorem-ipsum /> }
+            @case ('find-replace-regex') { <app-find-replace-regex /> }
+            @case ('slugify') { <app-slugify /> }
+            @case ('text-reverse') { <app-text-reverse /> }
+            @case ('csv-markdown-table') { <app-csv-markdown-table /> }
+            @case ('jwt-debugger') { <app-jwt-debugger /> }
+            @case ('base32-58') { <app-base32-58 /> }
+            @case ('hex-ascii') { <app-hex-ascii /> }
+            @case ('binary-translator') { <app-binary-translator /> }
+            @case ('morse-code') { <app-morse-code /> }
+            @case ('rsa-gen') { <app-rsa-gen /> }
+            @case ('x509-decoder') { <app-x509-decoder /> }
+            @case ('hmac-gen') { <app-hmac-gen /> }
+            @case ('uuid-gen') { <app-uuid-gen /> }
+            @case ('bcrypt-hasher') { <app-bcrypt /> }
+            @case ('epoch-converter') { <app-epoch-converter /> }
+            @case ('timezone-planner') { <app-timezone-planner /> }
+            @case ('cron-parser') { <app-cron-parser /> }
+            @case ('timer-stopwatch') { <app-timer-stopwatch /> }
+            @case ('percentage-calc') { <app-percentage-calc /> }
+            @case ('number-base') { <app-number-base /> }
+            @case ('unit-converter') { <app-unit-converter /> }
+            @case ('subnet-calc') { <app-subnet-calc /> }
+            @case ('aspect-ratio-calc') { <app-aspect-ratio-calc /> }
+            @case ('color-converter') { <app-color-converter /> }
+            @case ('pdf-merge-split') { <app-pdf-merge-split /> }
+            @case ('pdf-page-rotate') { <app-pdf-rotate /> }
+            @case ('pdf-to-from-images') { <app-pdf-images /> }
+            @case ('pdf-watermarker') { <app-pdf-watermark /> }
+            @case ('pdf-redactor') { <app-pdf-redact /> }
+            @case ('markdown-pdf-exporter') { <app-markdown-pdf /> }
+            @case ('spreadsheet-viewer') { <app-spreadsheet-viewer /> }
+            @case ('resume-parser') { <app-resume-parser /> }
+            @case ('resume-builder') { <app-resume-builder /> }
+            @case ('css-gradient') { <app-css-gradient /> }
+            @case ('css-shadow') { <app-css-shadow /> }
+            @case ('border-radius') { <app-border-radius /> }
+            @case ('glass-neumorphism') { <app-glass-neumorphism /> }
+            @case ('svg-blob') { <app-svg-blob /> }
+            @case ('cubic-bezier') { <app-cubic-bezier /> }
+            @case ('wcag-contrast') { <app-wcag-contrast /> }
+            @case ('flexbox-grid') { <app-flexbox-grid /> }
+            @case ('what-is-my-ip') { <app-what-is-my-ip /> }
+            @case ('dns-lookup') { <app-dns-lookup /> }
+            @case ('url-parser') { <app-url-parser /> }
+            @case ('http-status-guide') { <app-http-status-guide /> }
+            @case ('user-agent-parser') { <app-user-agent-parser /> }
+            @case ('robots-sitemap-validator') { <app-robots-sitemap /> }
+            @case ('open-graph-inspector') { <app-open-graph-inspector /> }
+            @case ('meta-tags-gen') { <app-meta-tags-gen /> }
+            @case ('cps-reaction-test') { <app-cps-reaction-test /> }
+            @case ('kanban-board') { <app-kanban-board /> }
+
             @default {
               <app-universal-game-engine [item]="item" />
             }

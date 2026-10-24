@@ -6,6 +6,9 @@
 /out-tsc
 /bazel-out
 
+# Self created tools
+/home/jules/self_created_tools
+
 # Node
 /node_modules
 server/node_modules

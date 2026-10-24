@@ -1,0 +1,507 @@
+
+> minimi-app@0.0.0 start
+> ng serve
+
+❯ Building...
+✔ Building...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.07 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.10 MB
+
+Application bundle generation complete. [11.094 seconds] - 2026-10-23T09:31:27.699Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+  ➜  Local:   http://localhost:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.09 MB |
+
+Application bundle generation complete. [19.152 seconds] - 2026-10-23T10:58:49.798Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.09 MB |
+
+Application bundle generation complete. [5.530 seconds] - 2026-10-23T11:46:05.080Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [7.641 seconds] - 2026-10-23T12:28:09.618Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/design-tools/svg-blob.component.ts:93:40:
+[37m      93 │             <textarea readonly [value]="[32mfullSvgCode[37m()"
+         ╵                                         [32m~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.10 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.13 MB
+
+Application bundle generation complete. [6.148 seconds] - 2026-10-23T13:02:30.949Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.11 MB |
+
+Application bundle generation complete. [8.052 seconds] - 2026-10-23T13:28:41.178Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.11 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.13 MB
+
+Application bundle generation complete. [21.442 seconds] - 2026-10-23T15:01:17.044Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.11 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.13 MB
+
+Application bundle generation complete. [0.015 seconds] - 2026-10-23T15:01:17.087Z
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [9.767 seconds] - 2026-10-23T15:02:32.242Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type '{ canvasContext: CanvasRenderingContext2D; viewport: PageViewport; }' is not assignable to parameter of type 'RenderParameters'.
+  Property 'canvas' is missing in type '{ canvasContext: CanvasRenderingContext2D; viewport: PageViewport; }' but required in type 'RenderParameters'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/doc-tools/pdf-images.component.ts:156:28:
+[37m      156 │ ...     await page.render([32m{ canvasContext: ctx, viewport }[37m).promise;
+          ╵                           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  'canvas' is declared here.
+
+    node_modules/pdfjs-dist/types/src/display/api.d.ts:397:4:
+[37m      397 │     [32mcanvas[37m: HTMLCanvasElement | null;
+          ╵     [32m~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.12 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.14 MB
+
+Application bundle generation complete. [2.395 seconds] - 2026-10-23T15:06:18.718Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.12 MB |
+
+Application bundle generation complete. [6.021 seconds] - 2026-10-23T15:28:08.420Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [5.975 seconds] - 2026-10-23T15:30:09.392Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.736 seconds] - 2026-10-23T15:30:29.095Z
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: LatexEditorComponent is not used within the template of App[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.ts:200:4:
+[37m      200 │     [32mLatexEditorComponent[37m,
+          ╵     [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.493 seconds] - 2026-10-23T15:30:59.370Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mNG8001: 'app-resume-builder' is not a known element:
+1. If 'app-resume-builder' is an Angular component, then verify that it is included in the '@Component.imports' of this component.
+2. If 'app-resume-builder' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@Component.schemas' of this component to suppress this message.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/app.html:194:39:
+[37m      194 │             @case ('resume-builder') { [32m<app-resume-builder />[37m }
+          ╵                                        [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component App.
+
+    src/app/app.ts:265:15:
+[37m      265 │   templateUrl: [32m'./app.html'[37m,
+          ╵                [32m~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [2.093 seconds] - 2026-10-23T15:35:32.634Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.469 seconds] - 2026-10-23T15:39:10.285Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:45:63:
+[37m      45 │ ...  <a [href]="boostedDownloadUrl()" [download]="[32mdownloadFilename[37m()"
+         ╵                                                   [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'Boolean' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:55:19:
+[37m      55 │               @if ([32misVideo[37m()) {
+         ╵                    [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.571 seconds] - 2026-10-23T15:40:20.923Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:45:63:
+[37m      45 │ ...  <a [href]="boostedDownloadUrl()" [download]="[32mdownloadFilename[37m()"
+         ╵                                                   [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'Boolean' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:55:19:
+[37m      55 │               @if ([32misVideo[37m()) {
+         ╵                    [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.254 seconds] - 2026-10-23T15:41:44.833Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnterminated regular expression[0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:115:55:
+[37m      115 │         html = html.replace(/\\documentclass.*\/g, '');[32m[37m
+          ╵                                                        [32m^[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS2554: Expected 2 arguments, but got 1.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:16:
+[37m      191 │     html = html.[32mreplace[37m(/\\documentclass.*\/g, '');
+          ╵                 [32m~~~~~~~[0m
+
+  An argument for 'replaceValue' was not provided.
+
+    node_modules/typescript/lib/lib.es5.d.ts:463:42:
+[37m      463 │ ...lace(searchValue: string | RegExp, [32mreplaceValue: string[37m): string;
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS1161: Unterminated regular expression literal.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/code-tools/latex-editor.component.ts:191:24:
+[37m      191 │     html = html.replace([32m/\\documentclass.*\/g, ''[37m);
+          ╵                         [32m~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:45:63:
+[37m      45 │ ...  <a [href]="boostedDownloadUrl()" [download]="[32mdownloadFilename[37m()"
+         ╵                                                   [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'Boolean' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:55:19:
+[37m      55 │               @if ([32misVideo[37m()) {
+         ╵                    [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [1.583 seconds] - 2026-10-23T15:46:02.543Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'String' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:45:63:
+[37m      45 │ ...  <a [href]="boostedDownloadUrl()" [download]="[32mdownloadFilename[37m()"
+         ╵                                                   [32m~~~~~~~~~~~~~~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS6234: This expression is not callable because it is a 'get' accessor. Did you mean to use it without '()'?
+  Type 'Boolean' has no call signatures.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/tools/media-tools/audio-booster.component.ts:55:19:
+[37m      55 │               @if ([32misVideo[37m()) {
+         ╵                    [32m~~~~~~~[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.20 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.22 MB
+
+Application bundle generation complete. [1.253 seconds] - 2026-10-23T15:46:16.049Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.20 MB |
+
+Application bundle generation complete. [6.019 seconds] - 2026-10-24T04:11:18.725Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.21 MB |
+
+Application bundle generation complete. [6.505 seconds] - 2026-10-24T04:12:31.292Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.21 MB |
+
+Application bundle generation complete. [2.721 seconds] - 2026-10-24T04:13:51.058Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.22 MB |
+
+Application bundle generation complete. [2.519 seconds] - 2026-10-24T04:15:01.476Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names         | Raw size
+main.js             | main          |  2.22 MB |
+styles.css          | styles        | 24.21 kB |
+
+                    | Initial total |  2.24 MB
+
+Application bundle generation complete. [1.546 seconds] - 2026-10-24T04:15:27.452Z
+
+Component update sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.23 MB |
+
+Application bundle generation complete. [1.710 seconds] - 2026-10-24T04:19:31.920Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.23 MB |
+
+Application bundle generation complete. [1.393 seconds] - 2026-10-24T04:20:53.289Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.23 MB |
+
+Application bundle generation complete. [1.238 seconds] - 2026-10-24T04:21:05.477Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names | Raw size
+main.js             | main  |  2.24 MB |
+
+Application bundle generation complete. [1.256 seconds] - 2026-10-24T04:21:15.844Z
+
+Page reload sent to client(s).
