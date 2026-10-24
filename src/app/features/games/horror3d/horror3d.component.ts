@@ -17,14 +17,15 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
           <span class="text-2xl">🔦</span>
           <div>
             <h2 class="text-base font-extrabold text-purple-400">MIDNIGHT ASYLUM (3D SURVIVAL HORROR)</h2>
-            <p class="text-xs text-slate-400">Navigate Dark Corridors • Collect Keys & Evade Entity</p>
+            <p class="text-xs text-slate-400">Navigate Dark Corridors • Manage Battery • Collect Keys & Evade Entity</p>
           </div>
         </div>
 
         <div class="flex items-center gap-4 text-xs font-bold">
           <div class="text-amber-400 text-sm">🔑 Keys Found: {{ keysFound() }}/4</div>
+          <div class="text-yellow-300 text-sm">🔋 Battery: {{ batteryPercent() }}%</div>
           <button (click)="toggleFullscreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold shadow">
-            ⛶
+            ⛶ Fullscreen
           </button>
           <button (click)="restartGame()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold shadow">
             🔄 Restart
@@ -37,15 +38,15 @@ import { ResponsiveUtil } from '../../../core/utils/responsive.util';
         <canvas #canvas class="w-full h-full block cursor-crosshair"></canvas>
 
         <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300 pointer-events-none">
-          🔦 Controls: WASD to Walk • Flashlight follows camera
+          🔦 Controls: WASD or Arrow Keys to Walk • Flashlight spotlight follows camera
         </div>
 
         <!-- Touch Controls for Mobile Devices -->
-        <div class="absolute bottom-4 right-4 flex gap-2 sm:hidden z-10">
-          <button (touchstart)="movePlayer('w')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
-          <button (touchstart)="movePlayer('s')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
-          <button (touchstart)="movePlayer('a')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
-          <button (touchstart)="movePlayer('d')" class="w-12 h-12 bg-slate-800/80 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
+        <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+          <button (touchstart)="movePlayer('w')" (mousedown)="movePlayer('w')" class="w-12 h-12 bg-slate-800/90 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬆️</button>
+          <button (touchstart)="movePlayer('s')" (mousedown)="movePlayer('s')" class="w-12 h-12 bg-slate-800/90 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬇️</button>
+          <button (touchstart)="movePlayer('a')" (mousedown)="movePlayer('a')" class="w-12 h-12 bg-slate-800/90 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">⬅️</button>
+          <button (touchstart)="movePlayer('d')" (mousedown)="movePlayer('d')" class="w-12 h-12 bg-slate-800/90 active:bg-purple-600 text-white font-black rounded-xl border border-slate-600">➡️</button>
         </div>
 
         @if (escaped()) {
@@ -68,6 +69,7 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   private audioService = inject(AudioService);
 
   keysFound = signal<number>(0);
+  batteryPercent = signal<number>(100);
   escaped = signal<boolean>(false);
 
   private scene!: THREE.Scene;
@@ -75,6 +77,7 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   private renderer!: THREE.WebGLRenderer;
   private flashlight!: THREE.SpotLight;
   private keysMeshes: THREE.Mesh[] = [];
+  private batteryMeshes: THREE.Mesh[] = [];
 
   private posX = 0;
   private posZ = 0;
@@ -97,10 +100,12 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
   restartGame() {
     this.audioService.playClickSound();
     this.keysFound.set(0);
+    this.batteryPercent.set(100);
     this.escaped.set(false);
     this.posX = 0;
     this.posZ = 0;
     this.keysMeshes.forEach(k => k.visible = true);
+    this.batteryMeshes.forEach(b => b.visible = true);
   }
 
   movePlayer(dir: string) {
@@ -136,11 +141,9 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(ResponsiveUtil.getClampedPixelRatio());
 
-    // Dim Ambient Light
     const dimAmb = new THREE.AmbientLight(0x0f172a, 0.2);
     this.scene.add(dimAmb);
 
-    // Flashlight SpotLight attached to Camera
     this.flashlight = new THREE.SpotLight(0xffedd5, 2.5);
     this.flashlight.angle = Math.PI / 6;
     this.flashlight.penumbra = 0.5;
@@ -181,6 +184,18 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
       this.scene.add(key);
       this.keysMeshes.push(key);
     });
+
+    // Spawn Collectible Batteries
+    const batGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 12);
+    const batMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+    const batPositions = [[-2, -4], [4, -2], [-4, 3], [3, 5]];
+
+    batPositions.forEach(pos => {
+      const bat = new THREE.Mesh(batGeo, batMat);
+      bat.position.set(pos[0], 0.4, pos[1]);
+      this.scene.add(bat);
+      this.batteryMeshes.push(bat);
+    });
   }
 
   private startLoop() {
@@ -203,6 +218,14 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
 
     this.camera.position.set(this.posX, 1.6, this.posZ);
 
+    // Battery Drain & Flicker
+    if (this.batteryPercent() > 0) {
+      this.batteryPercent.update(b => Math.max(0, +(b - 0.015).toFixed(2)));
+      this.flashlight.intensity = (this.batteryPercent() / 100) * 2.5;
+    } else {
+      this.flashlight.intensity = 0.2;
+    }
+
     // Flashlight follow
     this.flashlight.position.set(this.posX, 1.6, this.posZ);
     this.flashlight.target.position.set(this.posX, 1.6, this.posZ - 5);
@@ -216,6 +239,15 @@ export class Horror3dComponent implements AfterViewInit, OnDestroy {
         if (this.keysFound() >= 4) {
           this.escaped.set(true);
         }
+      }
+    });
+
+    // Battery Collection Check
+    this.batteryMeshes.forEach(bat => {
+      if (bat.visible && Math.hypot(bat.position.x - this.posX, bat.position.z - this.posZ) < 1.0) {
+        bat.visible = false;
+        this.audioService.playCoinSound();
+        this.batteryPercent.update(b => Math.min(100, b + 35));
       }
     });
   }

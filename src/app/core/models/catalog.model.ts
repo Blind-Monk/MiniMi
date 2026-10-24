@@ -99,9 +99,9 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     name: 'Midnight Asylum (3D Horror)',
     category: 'games',
     subcategory: '3D Horror / Survival',
-    description: 'Navigate dark asylum corridors with flashlight, collect hidden keys, avoid shadows with eerie dissonant ambient audio and touch controls.',
+    description: 'Navigate dark asylum corridors with flashlight spotlight, manage battery drain, collect keys & batteries, avoid shadows with dissonant audio.',
     icon: '🔦',
-    tags: ['3D', 'Horror', 'Survival', 'Maze', 'Horror Audio'],
+    tags: ['3D', 'Horror', 'Survival', 'Maze', 'Battery Management', 'Horror Audio'],
     isPopular: false,
     audioPlaylist: 'horror-dissonant'
   },
